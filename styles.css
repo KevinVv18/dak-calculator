@@ -520,6 +520,34 @@ h1 {
     padding: 20px;
 }
 
+.modal-ajustes-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-1);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.modal-ajustes-aplicar {
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-white);
+    background: var(--color-secondary);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.modal-ajustes-aplicar:hover {
+    background: rgba(176, 36, 255, 0.85);
+    transform: translateY(-1px);
+}
+
+.modal-ajustes-aplicar:active {
+    transform: translateY(0);
+}
+
 .ajustes-seccion {
     margin-bottom: 24px;
 }

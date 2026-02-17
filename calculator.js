@@ -1,10 +1,27 @@
 // Lógica de la calculadora
 // Config editable (copia de data.js); la calculadora usa CONFIG
-const CONFIG = {
-    serviciosBase: JSON.parse(JSON.stringify(SERVICIOS_BASE)),
-    perfilesCliente: JSON.parse(JSON.stringify(PERFILES_CLIENTE)),
-    factoresExtra: JSON.parse(JSON.stringify(FACTORES_EXTRA))
-};
+const CONFIG_STORAGE_KEY = 'dak-calculator-config';
+
+function getConfigInicial() {
+    try {
+        const guardado = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (guardado) {
+            const parsed = JSON.parse(guardado);
+            return {
+                serviciosBase: parsed.serviciosBase || JSON.parse(JSON.stringify(SERVICIOS_BASE)),
+                perfilesCliente: parsed.perfilesCliente || JSON.parse(JSON.stringify(PERFILES_CLIENTE)),
+                factoresExtra: parsed.factoresExtra || JSON.parse(JSON.stringify(FACTORES_EXTRA))
+            };
+        }
+    } catch (e) {}
+    return {
+        serviciosBase: JSON.parse(JSON.stringify(SERVICIOS_BASE)),
+        perfilesCliente: JSON.parse(JSON.stringify(PERFILES_CLIENTE)),
+        factoresExtra: JSON.parse(JSON.stringify(FACTORES_EXTRA))
+    };
+}
+
+const CONFIG = getConfigInicial();
 
 const SERVICIOS_BASE_KEYS = [
     { key: 'video-corto', label: 'Video corto' },
@@ -197,30 +214,27 @@ function rellenarModalAjustes() {
         fe.innerHTML += `<div class="ajustes-fila"><label for="${id}">${obj.nombre}</label><input type="number" id="${id}" data-fe="${key}" value="${obj.precio}" min="0"></div>`;
     });
 
-    sb.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', actualizarConfigDesdeModal);
-    });
-    pf.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', actualizarConfigDesdeModal);
-    });
-    fe.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', actualizarConfigDesdeModal);
-    });
 }
 
-function actualizarConfigDesdeModal(e) {
-    const el = e.target;
-    if (el.dataset.sb) {
-        const v = parseFloat(el.value);
-        if (!isNaN(v) && v >= 0) CONFIG.serviciosBase[el.dataset.sb][el.dataset.nivel] = v;
-    } else if (el.dataset.pf) {
-        const v = parseFloat(el.value);
-        if (!isNaN(v) && v >= 0) CONFIG.perfilesCliente[el.dataset.pf] = v;
-    } else if (el.dataset.fe) {
-        const v = parseFloat(el.value);
-        if (!isNaN(v) && v >= 0) CONFIG.factoresExtra[el.dataset.fe].precio = v;
-    }
+function aplicarYGuardarAjustes() {
+    // Leer valores del modal y aplicar a CONFIG
+    document.querySelectorAll('#ajustes-servicios-base input[data-sb]').forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v >= 0) CONFIG.serviciosBase[inp.dataset.sb][inp.dataset.nivel] = v;
+    });
+    document.querySelectorAll('#ajustes-perfiles input[data-pf]').forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v >= 0) CONFIG.perfilesCliente[inp.dataset.pf] = v;
+    });
+    document.querySelectorAll('#ajustes-factores-extra input[data-fe]').forEach(inp => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v >= 0) CONFIG.factoresExtra[inp.dataset.fe].precio = v;
+    });
+    try {
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(CONFIG));
+    } catch (e) {}
     calcularTotal();
+    cerrarModalAjustes();
 }
 
 // Mostrar/ocultar opciones de videos según checkbox
@@ -286,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('btn-ajustes').addEventListener('click', abrirModalAjustes);
     document.getElementById('modal-ajustes-cerrar').addEventListener('click', cerrarModalAjustes);
+    document.getElementById('modal-ajustes-aplicar').addEventListener('click', aplicarYGuardarAjustes);
     document.getElementById('modal-ajustes').addEventListener('click', function(ev) {
         if (ev.target === this) cerrarModalAjustes();
     });
