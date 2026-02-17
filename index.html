@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora DAK - Negociadora</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <img class="logo-dak" src="assets/logo.svg" alt="DAK" />
+            <h1>CALCULADORA</h1>
+            <button type="button" id="btn-ajustes" class="btn-ajustes" title="Ajustes" aria-label="Ajustes">
+                <svg class="icon-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+        </header>
+        
+        <p class="intro">Aquí haces algo visual e intuitivo. Ejemplo:</p>
+        
+        <div class="calculator-section">
+            <div class="input-section input-section--perfil-pendiente">
+                <h2>Cliente</h2>
+                
+                <div class="parameter-group parameter-group--cliente-nombre">
+                    <label for="nombre-cliente">Nombre del cliente (opcional)</label>
+                    <input type="text" id="nombre-cliente" class="text-input" placeholder="Escribe el nombre del cliente">
+                </div>
+                
+                <div class="step-perfil">
+                    <p class="step-perfil-text">Selecciona el perfil del cliente:</p>
+                    <div class="perfil-cards">
+                        <button type="button" class="perfil-card" data-perfil="bajo">
+                            <span class="perfil-card-icon">🌱</span>
+                            <span class="perfil-card-title">Bajo</span>
+                            <span class="perfil-card-desc">Proyectos base, presupuesto ajustado.</span>
+                        </button>
+                        <button type="button" class="perfil-card" data-perfil="medio">
+                            <span class="perfil-card-icon">⚖️</span>
+                            <span class="perfil-card-title">Medio</span>
+                            <span class="perfil-card-desc">Equilibrio entre valor y precio.</span>
+                        </button>
+                        <button type="button" class="perfil-card" data-perfil="alto">
+                            <span class="perfil-card-icon">💎</span>
+                            <span class="perfil-card-title">Alto</span>
+                            <span class="perfil-card-desc">Clientes premium, más exigentes.</span>
+                        </button>
+                    </div>
+                    <!-- Select real que usa la lógica, oculto visualmente -->
+                    <div class="parameter-group parameter-group--perfil-original">
+                        <label for="perfil-cliente">Perfil Cliente</label>
+                        <select id="perfil-cliente" class="select-input">
+                            <option value="bajo">Bajo</option>
+                            <option value="medio">Medio</option>
+                            <option value="alto" selected>Alto</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <h2 class="servicios-titulo">Servicios</h2>
+                
+                <div class="servicios-resto">
+                    <!-- Contenedor Videos -->
+                    <div class="servicio-container">
+                        <h3 class="servicio-container-titulo">Videos</h3>
+                        <div class="servicio-checkboxes">
+                            <label class="servicio-checkbox">
+                                <input type="checkbox" id="checkbox-video-corto">
+                                <span>Videos cortos</span>
+                            </label>
+                            <label class="servicio-checkbox">
+                                <input type="checkbox" id="checkbox-video-largo">
+                                <span>Videos largos</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Opciones Videos Cortos -->
+                        <div class="servicio-opciones" id="opciones-video-corto">
+                            <h4 class="servicio-opciones-subtitulo">Videos cortos</h4>
+                            <div class="parameter-group">
+                                <label for="cantidad-videos-cortos">Cantidad</label>
+                                <input type="number" id="cantidad-videos-cortos" class="number-input" value="0" min="0">
+                            </div>
+                            <div class="parameter-group">
+                                <label for="nivel-videos-cortos">Nivel</label>
+                                <select id="nivel-videos-cortos" class="select-input">
+                                    <option value="facil">Fácil</option>
+                                    <option value="medio" selected>Medio</option>
+                                    <option value="dificil">Difícil</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Opciones Videos Largos -->
+                        <div class="servicio-opciones" id="opciones-video-largo">
+                            <h4 class="servicio-opciones-subtitulo">Videos largos</h4>
+                            <div class="parameter-group">
+                                <label for="cantidad-videos-largos">Cantidad</label>
+                                <input type="number" id="cantidad-videos-largos" class="number-input" value="0" min="0">
+                            </div>
+                            <div class="parameter-group">
+                                <label for="nivel-videos-largos">Nivel</label>
+                                <select id="nivel-videos-largos" class="select-input">
+                                    <option value="facil">Fácil</option>
+                                    <option value="medio" selected>Medio</option>
+                                    <option value="dificil">Difícil</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Flyers -->
+                    <div class="parameter-group">
+                        <label for="cantidad-flyers">Cantidad Flyers</label>
+                        <input type="number" id="cantidad-flyers" class="number-input" value="0" min="0">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label for="nivel-flyers">Nivel Flyers</label>
+                        <select id="nivel-flyers" class="select-input">
+                            <option value="facil" selected>Fácil</option>
+                            <option value="medio">Medio</option>
+                            <option value="dificil">Difícil</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Portadas FB -->
+                    <div class="parameter-group">
+                        <label for="cantidad-portadas-fb">Cantidad Portadas FB</label>
+                        <input type="number" id="cantidad-portadas-fb" class="number-input" value="0" min="0">
+                    </div>
+                    
+                    <div class="parameter-group">
+                        <label for="nivel-portadas-fb">Nivel Portadas FB</label>
+                        <select id="nivel-portadas-fb" class="select-input">
+                            <option value="facil" selected>Fácil</option>
+                            <option value="medio">Medio</option>
+                            <option value="dificil">Difícil</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Extras -->
+                <div class="parameter-group parametros-extras">
+                    <label>Extras</label>
+                    <div class="extras-options">
+                        <label class="extra-checkbox">
+                            <input type="checkbox" id="urgencia">
+                            <span>Urgencia 48h</span>
+                        </label>
+                        <label class="extra-checkbox">
+                            <input type="checkbox" id="grabacion-fuera-zona">
+                            <span>Grabación fuera zona</span>
+                        </label>
+                        <label class="extra-checkbox">
+                            <input type="checkbox" id="revision-extra">
+                            <span>Revisión extra</span>
+                        </label>
+                        <label class="extra-checkbox">
+                            <input type="checkbox" id="drone-adicional">
+                            <span>Drone adicional</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="calculation-section">
+                <h2>Luego abajo:</h2>
+                
+                <div class="calculation-step">
+                    <span class="step-icon">🧮</span>
+                    <div class="step-content">
+                        <span class="step-label">Subtotal base</span>
+                        <span class="step-value" id="subtotal-base">0</span>
+                    </div>
+                </div>
+                
+                <div class="calculation-step">
+                    <span class="step-icon">✖️</span>
+                    <div class="step-content">
+                        <span class="step-label">Aplicar multiplicador</span>
+                        <span class="step-value" id="multiplicador-aplicado">0</span>
+                    </div>
+                </div>
+                
+                <div class="calculation-step">
+                    <span class="step-icon">➕</span>
+                    <div class="step-content">
+                        <span class="step-label">Sumar extras</span>
+                        <span class="step-value" id="extras-total">0</span>
+                        <div class="extras-details" id="extras-details"></div>
+                    </div>
+                </div>
+                
+                <div class="calculation-step final">
+                    <span class="step-icon">💰</span>
+                    <div class="step-content">
+                        <span class="step-label">TOTAL FINAL</span>
+                        <span class="step-value" id="total-final">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajustes -->
+    <div id="modal-ajustes" class="modal-ajustes" role="dialog" aria-labelledby="modal-ajustes-titulo" aria-hidden="true">
+        <div class="modal-ajustes-contenido">
+            <div class="modal-ajustes-header">
+                <h2 id="modal-ajustes-titulo">Ajustes</h2>
+                <button type="button" class="modal-ajustes-cerrar" id="modal-ajustes-cerrar" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-ajustes-body">
+                <section class="ajustes-seccion">
+                    <h3>Servicios base (precio por dificultad)</h3>
+                    <div id="ajustes-servicios-base"></div>
+                </section>
+                <section class="ajustes-seccion">
+                    <h3>Perfiles de cliente (multiplicador)</h3>
+                    <div id="ajustes-perfiles"></div>
+                </section>
+                <section class="ajustes-seccion">
+                    <h3>Factores extra (precio fijo)</h3>
+                    <div id="ajustes-factores-extra"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+    
+    <script src="data.js"></script>
+    <script src="calculator.js"></script>
+</body>
+</html>
