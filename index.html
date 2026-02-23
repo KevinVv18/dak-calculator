@@ -1,222 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora DAK - Negociadora</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="Calculadora de cotización de servicios DAK">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
+
 <body>
     <div class="container">
         <header>
             <img class="logo-dak" src="assets/logo.svg" alt="DAK" />
             <h1>CALCULADORA</h1>
-            <button type="button" id="btn-ajustes" class="btn-ajustes" title="Ajustes" aria-label="Ajustes">
-                <svg class="icon-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            <button type="button" id="btn-ajustes" class="btn-ajustes" title="Ajustes de precios" aria-label="Ajustes">
+                <svg class="icon-ajustes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
             </button>
         </header>
-        
-        <p class="intro">Aquí haces algo visual e intuitivo. Ejemplo:</p>
-        
-        <div class="calculator-section">
-            <div class="input-section input-section--perfil-pendiente">
-                <h2>Cliente</h2>
-                
-                <div class="parameter-group parameter-group--cliente-nombre">
-                    <label for="nombre-cliente">Nombre del cliente (opcional)</label>
-                    <input type="text" id="nombre-cliente" class="text-input" placeholder="Escribe el nombre del cliente">
+
+        <!-- Wizard Progress -->
+        <div class="wizard-progress">
+            <div class="wizard-step activo" data-step="1">
+                <div class="wizard-step-num">1</div>
+                <span class="wizard-step-label">Cliente</span>
+            </div>
+            <div class="wizard-line" id="line-1-2"></div>
+            <div class="wizard-step" data-step="2">
+                <div class="wizard-step-num">2</div>
+                <span class="wizard-step-label">Servicios</span>
+            </div>
+            <div class="wizard-line" id="line-2-3"></div>
+            <div class="wizard-step" data-step="3">
+                <div class="wizard-step-num">3</div>
+                <span class="wizard-step-label">Resumen</span>
+            </div>
+        </div>
+
+        <!-- ── STEP 1: Cliente ── -->
+        <div class="step-panel" id="step-1">
+            <div class="card">
+                <h2 class="card-title">Cliente</h2>
+                <p class="card-desc">Definí el perfil y los datos del cliente para personalizar la cotización.</p>
+
+                <div class="field-group">
+                    <label for="nombre-cliente">Nombre del cliente <span class="tag-opcional">opcional</span></label>
+                    <input type="text" id="nombre-cliente" class="text-input" placeholder="Ej: María García">
                 </div>
-                
-                <div class="step-perfil">
-                    <p class="step-perfil-text">Selecciona el perfil del cliente:</p>
+
+                <div class="field-group">
+                    <label for="email-cliente">Email del cliente <span class="tag-opcional">para
+                            cotización</span></label>
+                    <input type="email" id="email-cliente" class="text-input" placeholder="cliente@email.com">
+                </div>
+
+                <div class="field-group">
+                    <label>Perfil del cliente</label>
                     <div class="perfil-cards">
                         <button type="button" class="perfil-card" data-perfil="bajo">
                             <span class="perfil-card-icon">🌱</span>
                             <span class="perfil-card-title">Bajo</span>
+                            <span class="perfil-card-badge">Básico</span>
                             <span class="perfil-card-desc">Proyectos base, presupuesto ajustado.</span>
                         </button>
                         <button type="button" class="perfil-card" data-perfil="medio">
                             <span class="perfil-card-icon">⚖️</span>
                             <span class="perfil-card-title">Medio</span>
+                            <span class="perfil-card-badge">Estándar</span>
                             <span class="perfil-card-desc">Equilibrio entre valor y precio.</span>
                         </button>
                         <button type="button" class="perfil-card" data-perfil="alto">
                             <span class="perfil-card-icon">💎</span>
                             <span class="perfil-card-title">Alto</span>
+                            <span class="perfil-card-badge">Premium</span>
                             <span class="perfil-card-desc">Clientes premium, más exigentes.</span>
                         </button>
                     </div>
-                    <!-- Select real que usa la lógica, oculto visualmente -->
-                    <div class="parameter-group parameter-group--perfil-original">
-                        <label for="perfil-cliente">Perfil Cliente</label>
-                        <select id="perfil-cliente" class="select-input">
-                            <option value="bajo">Bajo</option>
-                            <option value="medio">Medio</option>
-                            <option value="alto" selected>Alto</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <h2 class="servicios-titulo">Servicios</h2>
-                
-                <div class="servicios-resto">
-                    <!-- Contenedor Videos -->
-                    <div class="servicio-container">
-                        <h3 class="servicio-container-titulo">Videos</h3>
-                        <div class="servicio-checkboxes">
-                            <label class="servicio-checkbox">
-                                <input type="checkbox" id="checkbox-video-corto">
-                                <span>Videos cortos</span>
-                            </label>
-                            <label class="servicio-checkbox">
-                                <input type="checkbox" id="checkbox-video-largo">
-                                <span>Videos largos</span>
-                            </label>
-                        </div>
-                        
-                        <!-- Opciones Videos Cortos -->
-                        <div class="servicio-opciones" id="opciones-video-corto">
-                            <h4 class="servicio-opciones-subtitulo">Videos cortos</h4>
-                            <div class="parameter-group">
-                                <label for="cantidad-videos-cortos">Cantidad</label>
-                                <input type="number" id="cantidad-videos-cortos" class="number-input" value="0" min="0">
-                            </div>
-                            <div class="parameter-group">
-                                <label for="nivel-videos-cortos">Nivel</label>
-                                <select id="nivel-videos-cortos" class="select-input">
-                                    <option value="facil">Fácil</option>
-                                    <option value="medio" selected>Medio</option>
-                                    <option value="dificil">Difícil</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <!-- Opciones Videos Largos -->
-                        <div class="servicio-opciones" id="opciones-video-largo">
-                            <h4 class="servicio-opciones-subtitulo">Videos largos</h4>
-                            <div class="parameter-group">
-                                <label for="cantidad-videos-largos">Cantidad</label>
-                                <input type="number" id="cantidad-videos-largos" class="number-input" value="0" min="0">
-                            </div>
-                            <div class="parameter-group">
-                                <label for="nivel-videos-largos">Nivel</label>
-                                <select id="nivel-videos-largos" class="select-input">
-                                    <option value="facil">Fácil</option>
-                                    <option value="medio" selected>Medio</option>
-                                    <option value="dificil">Difícil</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Flyers -->
-                    <div class="parameter-group">
-                        <label for="cantidad-flyers">Cantidad Flyers</label>
-                        <input type="number" id="cantidad-flyers" class="number-input" value="0" min="0">
-                    </div>
-                    
-                    <div class="parameter-group">
-                        <label for="nivel-flyers">Nivel Flyers</label>
-                        <select id="nivel-flyers" class="select-input">
-                            <option value="facil" selected>Fácil</option>
-                            <option value="medio">Medio</option>
-                            <option value="dificil">Difícil</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Portadas FB -->
-                    <div class="parameter-group">
-                        <label for="cantidad-portadas-fb">Cantidad Portadas FB</label>
-                        <input type="number" id="cantidad-portadas-fb" class="number-input" value="0" min="0">
-                    </div>
-                    
-                    <div class="parameter-group">
-                        <label for="nivel-portadas-fb">Nivel Portadas FB</label>
-                        <select id="nivel-portadas-fb" class="select-input">
-                            <option value="facil" selected>Fácil</option>
-                            <option value="medio">Medio</option>
-                            <option value="dificil">Difícil</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Extras -->
-                <div class="parameter-group parametros-extras">
-                    <label>Extras</label>
-                    <div class="extras-options">
-                        <label class="extra-checkbox">
-                            <input type="checkbox" id="urgencia">
-                            <span>Urgencia 48h</span>
-                        </label>
-                        <label class="extra-checkbox">
-                            <input type="checkbox" id="grabacion-fuera-zona">
-                            <span>Grabación fuera zona</span>
-                        </label>
-                        <label class="extra-checkbox">
-                            <input type="checkbox" id="revision-extra">
-                            <span>Revisión extra</span>
-                        </label>
-                        <label class="extra-checkbox">
-                            <input type="checkbox" id="drone-adicional">
-                            <span>Drone adicional</span>
-                        </label>
-                    </div>
+                    <p class="perfil-hint" id="perfil-hint">↑ Seleccioná un perfil para continuar</p>
+                    <select id="perfil-cliente" style="display:none" aria-hidden="true">
+                        <option value="bajo">Bajo</option>
+                        <option value="medio">Medio</option>
+                        <option value="alto">Alto</option>
+                    </select>
                 </div>
             </div>
-            
-            <div class="calculation-section">
-                <h2>Luego abajo:</h2>
-                
-                <div class="calculation-step">
-                    <span class="step-icon">🧮</span>
-                    <div class="step-content">
-                        <span class="step-label">Subtotal base</span>
-                        <span class="step-value" id="subtotal-base">0</span>
-                    </div>
+        </div>
+
+        <!-- ── STEP 2: Servicios ── -->
+        <div class="step-panel hidden" id="step-2">
+            <!-- Tabs de categorías (generadas por JS) -->
+            <div class="cat-tabs" id="cat-tabs"></div>
+            <!-- Paneles de servicios (generados por JS) -->
+            <div class="cat-panels" id="cat-panels"></div>
+
+            <!-- Extras (collapsible) -->
+            <div class="card extras-card" id="extras-card">
+                <div class="extras-header" id="extras-toggle">
+                    <h3 class="card-subtitle">Extras</h3>
+                    <span class="extras-arrow" id="extras-arrow">&#9650;</span>
                 </div>
-                
-                <div class="calculation-step">
-                    <span class="step-icon">✖️</span>
-                    <div class="step-content">
-                        <span class="step-label">Aplicar multiplicador</span>
-                        <span class="step-value" id="multiplicador-aplicado">0</span>
-                    </div>
-                </div>
-                
-                <div class="calculation-step">
-                    <span class="step-icon">➕</span>
-                    <div class="step-content">
-                        <span class="step-label">Sumar extras</span>
-                        <span class="step-value" id="extras-total">0</span>
-                        <div class="extras-details" id="extras-details"></div>
-                    </div>
-                </div>
-                
-                <div class="calculation-step final">
-                    <span class="step-icon">💰</span>
-                    <div class="step-content">
-                        <span class="step-label">TOTAL FINAL</span>
-                        <span class="step-value" id="total-final">0</span>
-                    </div>
+                <div class="extras-body" id="extras-body">
+                    <div class="extras-grid" id="extras-grid"></div>
                 </div>
             </div>
+
+            <!-- Floating total -->
+            <div class="flotante-total" id="flotante-total">
+                <span class="flotante-label">Total estimado</span>
+                <span class="flotante-valor" id="flotante-valor">$0</span>
+            </div>
+        </div>
+
+        <!-- ── STEP 3: Resumen & Envío ── -->
+        <div class="step-panel hidden" id="step-3">
+            <div class="card">
+                <h2 class="card-title">Resumen de cotización</h2>
+                <div id="resumen-contenido"></div>
+            </div>
+
+            <div class="card email-card">
+                <h3 class="card-subtitle">📧 Enviar cotización</h3>
+                <div class="field-group">
+                    <label for="email-destino">Email del destinatario</label>
+                    <input type="email" id="email-destino" class="text-input" placeholder="cliente@email.com">
+                </div>
+                <div class="field-group">
+                    <label for="email-mensaje">Mensaje personalizado <span class="tag-opcional">opcional</span></label>
+                    <textarea id="email-mensaje" class="text-input" rows="3"
+                        placeholder="Fue un placer conocerlos. Quedo a disposición para cualquier consulta."></textarea>
+                </div>
+                <label class="toggle-aprox" id="label-aprox">
+                    <input type="checkbox" id="chk-aprox" checked>
+                    <div class="toggle-aprox-track">
+                        <div class="toggle-aprox-thumb"></div>
+                    </div>
+                    <div class="toggle-aprox-text">
+                        <span class="toggle-aprox-label">Presupuesto aproximado</span>
+                        <span class="toggle-aprox-desc">Los precios son orientativos y pueden ajustarse antes de
+                            oficializarse.</span>
+                    </div>
+                </label>
+                <button type="button" id="btn-enviar" class="btn-primary btn-enviar">
+                    Enviar cotización por email
+                </button>
+                <p class="email-feedback" id="email-feedback"></p>
+            </div>
+        </div>
+
+        <!-- Navegación wizard -->
+        <div class="wizard-nav">
+            <button type="button" id="btn-anterior" class="btn-secondary hidden">← Anterior</button>
+            <button type="button" id="btn-siguiente" class="btn-primary">Siguiente →</button>
         </div>
     </div>
 
     <!-- Modal Ajustes -->
-    <div id="modal-ajustes" class="modal-ajustes" role="dialog" aria-labelledby="modal-ajustes-titulo" aria-hidden="true">
+    <div id="modal-ajustes" class="modal-ajustes" role="dialog" aria-labelledby="modal-ajustes-titulo"
+        aria-hidden="true">
         <div class="modal-ajustes-contenido">
             <div class="modal-ajustes-header">
-                <h2 id="modal-ajustes-titulo">Ajustes</h2>
-                <button type="button" class="modal-ajustes-cerrar" id="modal-ajustes-cerrar" aria-label="Cerrar">&times;</button>
+                <h2 id="modal-ajustes-titulo">Ajustes de precios</h2>
+                <button type="button" class="modal-ajustes-cerrar" id="modal-ajustes-cerrar"
+                    aria-label="Cerrar">&times;</button>
             </div>
             <div class="modal-ajustes-body">
                 <section class="ajustes-seccion">
-                    <h3>Servicios base (precio por dificultad)</h3>
+                    <h3>Servicios por nivel de dificultad</h3>
                     <div id="ajustes-servicios-base"></div>
+                </section>
+                <section class="ajustes-seccion">
+                    <h3>Servicios con precio fijo</h3>
+                    <div id="ajustes-precios-fijos"></div>
                 </section>
                 <section class="ajustes-seccion">
                     <h3>Perfiles de cliente (multiplicador)</h3>
@@ -228,12 +189,15 @@
                 </section>
             </div>
             <div class="modal-ajustes-footer">
-                <button type="button" class="modal-ajustes-aplicar" id="modal-ajustes-aplicar">Aplicar</button>
+                <button type="button" class="btn-secondary" id="modal-ajustes-reset">Restaurar defaults</button>
+                <button type="button" class="btn-primary" id="modal-ajustes-aplicar">Aplicar</button>
             </div>
         </div>
     </div>
-    
-    <script src="data.js"></script>
-    <script src="calculator.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="data.js?v=4"></script>
+    <script src="calculator.js?v=4"></script>
 </body>
+
 </html>
