@@ -626,11 +626,16 @@ function enviarCotizacion() {
             total: fmt(total.totalFinal),
             mensaje: mensaje || ''
         }, EMAILJS_CONFIG.publicKey)
-            .then(() => {
+            .then((response) => {
                 feedback.textContent = '✅ Cotización enviada con éxito.';
                 feedback.className = 'email-feedback ok';
+                console.log('SUCCESS!', response.status, response.text);
             })
-            .catch(() => enviarMailto(emailDestino, nombre, cuerpo, mensaje, feedback));
+            .catch((error) => {
+                console.error('FAILED...', error);
+                feedback.textContent = `❌ Error EmailJS: ${error?.text || 'Mala configuración'}`;
+                feedback.className = 'email-feedback error';
+            });
     } else {
         enviarMailto(emailDestino, nombre, cuerpo, mensaje, feedback);
     }

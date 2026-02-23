@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="470 0 501 421" width="32" height="32">
+  <rect width="100%" height="100%" fill="#030106" rx="6"/>
+  <!-- Purple "A" mark — the two chevron fills from the DAK logo -->
+  <polygon fill="#B024FF" points="698.28 275.48 622.19 55.94 470.31 420.36 645.56 420.36 698.28 275.48"/>
+  <polygon fill="#B024FF" points="650.75 .44 826 .44 971.2 420.36 795.95 420.36 650.75 .44"/>
+</svg>
