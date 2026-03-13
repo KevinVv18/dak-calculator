@@ -430,6 +430,7 @@ textarea.text-input {
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     margin-bottom: 12px;
+    padding-top: 14px;
     perspective: 800px;
 }
 
@@ -547,16 +548,16 @@ textarea.text-input {
 
 .perfil-card:hover {
     border-color: var(--tier-color, rgba(255,255,255,0.15));
-    transform: translateY(-8px) scale(1.03);
+    transform: translateY(-5px) scale(1.02);
     box-shadow:
-        0 24px 48px -12px rgba(0, 0, 0, 0.5),
-        0 0 40px -5px var(--tier-glow, transparent),
+        0 18px 36px -10px rgba(0, 0, 0, 0.5),
+        0 0 30px -5px var(--tier-glow, transparent),
         inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .perfil-card:active {
-    transform: translateY(-2px) scale(0.98);
-    transition-duration: 0.12s;
+    transform: translateY(-1px) scale(0.99);
+    transition-duration: 0.1s;
 }
 
 /* Icon wrap */
@@ -702,19 +703,19 @@ textarea.text-input {
 .perfil-card--activo {
     border-color: var(--tier-color) !important;
     background: rgba(var(--tier-color-rgb), 0.1);
-    transform: translateY(-8px) scale(1.03);
+    transform: translateY(-5px) scale(1.02);
     box-shadow:
         0 0 0 1px var(--tier-color),
-        0 24px 48px -12px rgba(0, 0, 0, 0.5),
-        0 0 50px -5px var(--tier-glow),
+        0 18px 36px -10px rgba(0, 0, 0, 0.5),
+        0 0 40px -5px var(--tier-glow),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    animation: bounceSelect 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: bounceSelect 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes bounceSelect {
-    0% { transform: translateY(0) scale(0.95); }
-    50% { transform: translateY(-12px) scale(1.06); }
-    100% { transform: translateY(-8px) scale(1.03); }
+    0%   { transform: translateY(0)    scale(0.98); }
+    40%  { transform: translateY(-7px) scale(1.03); }
+    100% { transform: translateY(-5px) scale(1.02); }
 }
 
 .perfil-card--activo .perfil-card-title {
