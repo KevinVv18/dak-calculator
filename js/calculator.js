@@ -2,8 +2,20 @@
 //  DAK Calculator — lógica principal
 // ══════════════════════════════════════════
 
+// ── Sanitización HTML para prevenir XSS ──
+function sanitizeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ── Validación de email ──
+function validarEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 const CONFIG_KEY = 'dak-calculator-config';
-const CONFIG_VERSION = 4; // bumpeá este número al cambiar la estructura del config
+const CONFIG_VERSION = 5; // bumpeá este número al cambiar la estructura del config
 
 function getConfig() {
     const defaults = {
@@ -39,20 +51,35 @@ function getConfig() {
 const CONFIG = getConfig();
 
 // ── Helpers ──
-const NIVELES = ['facil', 'medio', 'dificil'];
-const NIVELES_LABEL = { facil: 'Fácil', medio: 'Medio', dificil: 'Difícil' };
+const NIVELES = ['basico', 'avanzado'];
+const NIVELES_LABEL = { basico: 'Básico', avanzado: 'Avanzado' };
 const PERFIL_LABEL = { bajo: 'Inicial', medio: 'Crecimiento', alto: 'Corporativo' };
 const TAG_FIJO = {
-    'web-basica': 'Sitio web',
-    'web-avanzada': 'Web pro',
+    'foto-tematica': 'Fotografía',
+    'fotos-eventos': 'Fotografía',
+    'tarjetas': 'Diseño',
+    'banner': 'Diseño',
+    'volantes': 'Diseño',
+    'diptico': 'Diseño',
+    'triptico': 'Diseño',
+    'portada-fb': 'Diseño',
+    'mockups': 'Diseño',
+    'paneles': 'Diseño',
+    'branding-rebranding': 'Branding',
+    'landing-page': 'Web',
+    'tienda-online': 'E-commerce',
+    'mantenimiento-web': 'Soporte',
     'ads-meta': 'Publicidad',
     'ads-facebook': 'Publicidad',
     'ads-instagram': 'Publicidad',
     'seo-basico': 'Posicionar',
     'seo-avanzado': 'Posicionar',
     'sem-campana': 'Campaña',
+    'email-marketing': 'Automación',
+    'auto-redes': 'Automación',
+    'dashboard-reportes': 'Analítica',
 };
-const fmt = n => '$' + new Intl.NumberFormat('es-ES').format(Math.round(n));
+const fmt = n => 'S/ ' + new Intl.NumberFormat('es-PE').format(Math.round(n));
 
 // Items personalizados (en memoria)
 let itemsPersonalizados = [];
@@ -69,18 +96,51 @@ function actualizarVistaAdmin() {
     const btnAjustes = document.getElementById('btn-ajustes');
     const lockIcon = document.getElementById('icon-lock-aprox');
     const tooltip = document.getElementById('tooltip-aprox');
-    
+    const step1 = document.getElementById('step-1');
+    const wizardStep1 = document.querySelector('.wizard-step[data-step="1"]');
+    const line12 = document.getElementById('line-1-2');
+
+    const btnLogout = document.getElementById('btn-logout');
+
     if (isAdmin) {
         if (btnAdmin) btnAdmin.style.display = 'none';
         if (btnAjustes) btnAjustes.style.display = 'flex';
+        if (btnLogout) btnLogout.style.display = 'flex';
         if (lockIcon) lockIcon.style.display = 'none';
         if (tooltip) tooltip.style.display = 'none';
+        // Admin sees step 1 (perfil)
+        if (wizardStep1) wizardStep1.style.display = '';
+        if (line12) line12.style.display = '';
         cerrarModalLoginAdmin();
     } else {
         if (btnAdmin) btnAdmin.style.display = 'flex';
         if (btnAjustes) btnAjustes.style.display = 'none';
+        if (btnLogout) btnLogout.style.display = 'none';
         if (lockIcon) lockIcon.style.display = 'inline-block';
         if (tooltip) tooltip.style.display = '';
+        // Non-admin: hide step 1, set default perfil, go to step 2
+        if (wizardStep1) wizardStep1.style.display = 'none';
+        if (line12) line12.style.display = 'none';
+        document.getElementById('perfil-cliente').value = 'bajo';
+        if (maxStepAlcanzado < 2) maxStepAlcanzado = 2;
+        if (stepActual === 1) {
+            if (step1) step1.classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            stepActual = 2;
+            // Update wizard progress for step 2
+            document.querySelectorAll('.wizard-step').forEach(el => {
+                const sn = parseInt(el.dataset.step);
+                el.classList.toggle('activo', sn === 2);
+                el.classList.toggle('completado', sn < 2);
+            });
+            document.getElementById('line-2-3').classList.toggle('completada', false);
+            document.getElementById('btn-anterior').classList.add('hidden');
+            document.getElementById('btn-siguiente').classList.remove('hidden');
+        }
+        // Always hide Anterior on step 2 for non-admin
+        if (stepActual === 2) {
+            document.getElementById('btn-anterior').classList.add('hidden');
+        }
     }
 }
 
@@ -103,12 +163,18 @@ function cerrarModalLoginAdmin() {
     }
 }
 
+function logoutAdmin() {
+    sessionStorage.removeItem('dak-admin');
+    actualizarVistaAdmin();
+    cerrarModalAjustes();
+}
+
 function procesarLoginAdmin() {
     const user = document.getElementById('admin-user').value.trim();
     const pass = document.getElementById('admin-pass').value.trim();
     const errEl = document.getElementById('admin-login-error');
     
-    if (user === 'admindak' && pass === 'dak123') {
+    if (typeof ADMIN_CREDENTIALS !== 'undefined' && user === ADMIN_CREDENTIALS.user && pass === ADMIN_CREDENTIALS.pass) {
         sessionStorage.setItem('dak-admin', 'true');
         errEl.style.display = 'none';
         actualizarVistaAdmin();
@@ -118,23 +184,30 @@ function procesarLoginAdmin() {
 }
 
 function mostrarErrorToast(mensaje) {
-    let toast = document.querySelector('.toast-error-admin');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.className = 'toast-error-admin';
-        document.querySelector('.toggle-aprox').appendChild(toast);
-    }
-    
-    toast.textContent = mensaje;
-    toast.classList.remove('shake', 'show');
-    
-    // Force reflow
-    void toast.offsetWidth;
-    
-    toast.classList.add('show', 'shake');
-    
+    const tooltip = document.getElementById('tooltip-aprox');
+    if (!tooltip) return;
+
+    // Update text to error message
+    tooltip.dataset.originalText = tooltip.dataset.originalText || tooltip.textContent;
+    tooltip.textContent = mensaje;
+
+    // Force visible + error state
+    tooltip.classList.remove('tooltip-error');
+    void tooltip.offsetWidth;
+    tooltip.classList.add('tooltip-error');
+
+    // Force show (in case not hovering)
+    tooltip.style.opacity = '1';
+    tooltip.style.visibility = 'visible';
+    tooltip.style.transform = 'translateY(0)';
+
     setTimeout(() => {
-        toast.classList.remove('show');
+        tooltip.classList.remove('tooltip-error');
+        tooltip.textContent = tooltip.dataset.originalText;
+        // Let CSS hover handle visibility again
+        tooltip.style.opacity = '';
+        tooltip.style.visibility = '';
+        tooltip.style.transform = '';
     }, 2500);
 }
 
@@ -156,10 +229,12 @@ function irAStep(n) {
 
     const btnAnt = document.getElementById('btn-anterior');
     const btnSig = document.getElementById('btn-siguiente');
-    btnAnt.classList.toggle('hidden', n === 1);
+    const minStep = isAdmin ? 1 : 2;
+    btnAnt.classList.toggle('hidden', n <= minStep);
     btnSig.classList.toggle('hidden', n === 3);
 
     stepActual = n;
+    if (n > maxStepAlcanzado) maxStepAlcanzado = n;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -174,7 +249,8 @@ function irAlSiguiente() {
 }
 
 function irAlAnterior() {
-    if (stepActual > 1) irAStep(stepActual - 1);
+    const minStep = isAdmin ? 1 : 2;
+    if (stepActual > minStep) irAStep(stepActual - 1);
 }
 
 function validarStep1() {
@@ -218,7 +294,11 @@ function renderStep2() {
         tab.type = 'button';
         tab.className = 'cat-tab' + (idx === 0 ? ' activo' : '');
         tab.dataset.cat = cat.id;
-        tab.textContent = cat.label;
+        if (cat.badge) {
+            tab.innerHTML = `${sanitizeHTML(cat.label)} <span class="badge-nuevo">${sanitizeHTML(cat.badge)}</span>`;
+        } else {
+            tab.textContent = cat.label;
+        }
         tab.addEventListener('click', () => cambiarTab(cat.id));
         tabsEl.appendChild(tab);
 
@@ -329,6 +409,41 @@ function renderStep2() {
         }
     });
 
+    // Info tooltips: move all tips to body to escape overflow:hidden / backdrop-filter stacking
+    const globalTip = document.createElement('div');
+    globalTip.className = 'svc-info-tip';
+    globalTip.style.display = 'none';
+    document.body.appendChild(globalTip);
+
+    document.querySelectorAll('.svc-info-wrap').forEach(wrap => {
+        wrap.addEventListener('mouseenter', () => {
+            const key = wrap.closest('.svc-card')?.id?.replace('card-', '');
+            const desc = SERVICE_INFO[key];
+            if (!desc) return;
+            globalTip.innerHTML = sanitizeHTML(desc).replace(/\n/g, '<br>');
+            const tipW = 240;
+            globalTip.style.width = tipW + 'px';
+            globalTip.style.display = 'block';
+            globalTip.style.opacity = '0';
+            const tipH = globalTip.offsetHeight;
+            const rect = wrap.getBoundingClientRect();
+            let left = rect.left + rect.width / 2 - tipW / 2;
+            let top = rect.top - tipH - 8;
+            if (left < 8) left = 8;
+            if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
+            if (top < 8) top = rect.bottom + 8;
+            globalTip.style.left = left + 'px';
+            globalTip.style.top = top + 'px';
+            globalTip.style.opacity = '1';
+            globalTip.style.visibility = 'visible';
+        });
+        wrap.addEventListener('mouseleave', () => {
+            globalTip.style.opacity = '0';
+            globalTip.style.visibility = 'hidden';
+            globalTip.style.display = 'none';
+        });
+    });
+
     // Personalizado
     document.getElementById('btn-add-custom')?.addEventListener('click', agregarItemPersonalizado);
 
@@ -340,12 +455,21 @@ function renderStep2() {
     });
 }
 
+function renderInfoIcon(key) {
+    const desc = SERVICE_INFO[key];
+    if (!desc) return '';
+    return `<span class="svc-info-wrap">
+        <span class="svc-info-icon">ⓘ</span>
+    </span>`;
+}
+
 function renderCardNivel(s) {
-    const desde = CONFIG.serviciosBase[s.key]?.facil ?? 0;
+    const desde = CONFIG.serviciosBase[s.key]?.basico ?? 0;
     const precios = CONFIG.serviciosBase[s.key] ?? {};
-    const nivelBtns = ['facil', 'medio', 'dificil'].map(n => `
-        <button type="button" class="nivel-btn${n === 'medio' ? ' activo' : ''}" data-nivel="${n}">
-            <span class="nivel-btn-name">${NIVELES_LABEL[n]}</span>
+    const labels = s.tierLabels || {};
+    const nivelBtns = NIVELES.map(n => `
+        <button type="button" class="nivel-btn${n === 'basico' ? ' activo' : ''}" data-nivel="${n}">
+            <span class="nivel-btn-name">${labels[n] || NIVELES_LABEL[n]}</span>
             <span class="nivel-btn-price">${fmt(precios[n] ?? 0)}</span>
         </button>`).join('');
     return `
@@ -353,7 +477,7 @@ function renderCardNivel(s) {
         <div class="svc-card-header">
             <input type="checkbox" id="chk-${s.key}" style="flex-shrink:0;width:17px;height:17px;accent-color:var(--color-secondary);pointer-events:none">
             <div class="svc-card-info">
-                <span class="svc-card-label">${s.label}</span>
+                <span class="svc-card-label">${s.label}${renderInfoIcon(s.key)}</span>
                 <span class="svc-card-price">desde ${fmt(desde)} / ${s.unidad || 'unidad'}</span>
             </div>
         </div>
@@ -368,9 +492,9 @@ function renderCardNivel(s) {
                 <input type="hidden" id="qty-${s.key}" value="1">
             </div>
             <div class="svc-field">
-                <label>Nivel</label>
+                <label>Tipo</label>
                 <div class="nivel-seg" id="seg-${s.key}" data-key="${s.key}">${nivelBtns}</div>
-                <input type="hidden" id="lvl-${s.key}" value="medio">
+                <input type="hidden" id="lvl-${s.key}" value="basico">
             </div>
         </div>
     </div>`;
@@ -383,7 +507,7 @@ function renderCardFijo(s) {
         <div class="svc-card-header">
             <input type="checkbox" id="chk-${s.key}" aria-label="${s.label}">
             <div class="svc-card-info">
-                <span class="svc-card-label">${s.label}</span>
+                <span class="svc-card-label">${s.label}${renderInfoIcon(s.key)}</span>
                 <span class="svc-card-price">${fmt(precio)}</span>
             </div>
         </div>
@@ -454,7 +578,7 @@ function calcularTotal() {
             if (!chk?.checked) return;
             if (s.tipo === 'nivel') {
                 const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'medio';
+                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
                 subtotalBase += qty * (CONFIG.serviciosBase[s.key]?.[lvl] ?? 0);
             } else if (s.tipo === 'fijo') {
                 subtotalBase += CONFIG.preciosFijos[s.key]?.precio ?? 0;
@@ -492,7 +616,7 @@ function actualizarFlotante() {
 
 function renderResumen() {
     const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal } = calcularTotal();
-    const nombre = document.getElementById('nombre-cliente').value.trim();
+    const nombre = sanitizeHTML(document.getElementById('nombre-cliente').value.trim());
     const perfilLabel = PERFIL_LABEL[perfil] || perfil;
 
     let filas = [];
@@ -503,10 +627,11 @@ function renderResumen() {
             if (!chk?.checked) return;
             if (s.tipo === 'nivel') {
                 const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'medio';
+                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
                 const precioUnit = CONFIG.serviciosBase[s.key]?.[lvl] ?? 0;
                 const subtotal = qty * precioUnit;
-                if (subtotal > 0) filas.push({ cat: cat.label, nombre: s.label, key: s.key, tipo: 'nivel', qty, lvl, precioUnit, subtotal });
+                const tierLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
+                if (subtotal > 0) filas.push({ cat: cat.label, nombre: s.label, key: s.key, tipo: 'nivel', qty, lvl, tierLabel, precioUnit, subtotal });
             } else if (s.tipo === 'fijo') {
                 const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
                 filas.push({ cat: cat.label, nombre: s.label, key: s.key, tipo: 'fijo', subtotal: p });
@@ -527,7 +652,7 @@ function renderResumen() {
                         <button type="button" class="resumen-stepper-btn" data-action="minus" data-key="${f.key}">−</button>
                         <input type="number" class="resumen-stepper-input" id="rqty-${f.key}" data-key="${f.key}" value="${f.qty}" min="1">
                         <button type="button" class="resumen-stepper-btn" data-action="plus" data-key="${f.key}">+</button>
-                        <span class="resumen-stepper-level">× ${NIVELES_LABEL[f.lvl]}</span>
+                        <span class="resumen-stepper-level">× ${f.tierLabel}</span>
                     </div>`;
             } else if (f.tipo === 'fijo') {
                 const tagLabel = TAG_FIJO[f.key] || 'Fijo';
@@ -543,7 +668,7 @@ function renderResumen() {
 
             return `
             <tr>
-                <td><span class="tag-cat">${f.cat}</span><br><span style="margin-top:4px;display:block">${f.nombre}</span></td>
+                <td><span class="tag-cat">${sanitizeHTML(f.cat)}</span><br><span style="margin-top:4px;display:block">${sanitizeHTML(f.nombre)}</span></td>
                 <td>${detalleHtml}</td>
                 <td class="text-right">${fmt(f.subtotal)}</td>
                 <td class="td-action"><button type="button" class="btn-resumen-delete" ${deleteAttr} title="Eliminar">🗑</button></td>
@@ -551,10 +676,17 @@ function renderResumen() {
         }).join('')
         : `<tr><td colspan="4" class="resumen-empty">Sin servicios seleccionados.</td></tr>`;
 
+    const perfilRow = isAdmin
+        ? `<div class="resumen-fila"><span>× Perfil ${perfilLabel} (${multiplicador}x)</span><span>${fmt(subtotalMult)}</span></div>`
+        : '';
+    const perfilMeta = isAdmin
+        ? `<span>Perfil: <strong>${perfilLabel}</strong> (×${multiplicador})</span>`
+        : '';
+
     const html = `
         <div class="resumen-meta">
             ${nombre ? `<span>Cliente: <strong>${nombre}</strong></span>` : ''}
-            <span>Perfil: <strong>${perfilLabel}</strong> (×${multiplicador})</span>
+            ${perfilMeta}
         </div>
         <table class="resumen-tabla">
             <thead><tr>
@@ -567,7 +699,7 @@ function renderResumen() {
         </table>
         <div class="resumen-calculo">
             <div class="resumen-fila"><span>Subtotal base</span><span>${fmt(subtotalBase)}</span></div>
-            <div class="resumen-fila"><span>× Perfil ${perfilLabel} (${multiplicador}x)</span><span>${fmt(subtotalMult)}</span></div>
+            ${perfilRow}
             ${extrasActivos.length ? `<div class="resumen-fila"><span>+ Extras (${extrasActivos.map(e => e.nombre).join(', ')})</span><span>${fmt(extrasTotal)}</span></div>` : ''}
             <div class="resumen-fila total"><span>TOTAL FINAL</span><span>${fmt(totalFinal)}</span></div>
         </div>`;
@@ -670,9 +802,9 @@ function renderResumen() {
 function agregarItemPersonalizado() {
     const nombreEl = document.getElementById('custom-nombre');
     const precioEl = document.getElementById('custom-precio');
-    const nombre = nombreEl.value.trim();
+    const nombre = nombreEl.value.trim().slice(0, 100); // Límite 100 chars
     const precio = parseFloat(precioEl.value) || 0;
-    if (!nombre || precio <= 0) return;
+    if (!nombre || precio <= 0 || precio > 999999) return;
     itemsPersonalizados.push({ id: Date.now(), nombre, precio });
     nombreEl.value = '';
     precioEl.value = '';
@@ -692,11 +824,16 @@ function renderListaCustom() {
     list.innerHTML = itemsPersonalizados.length
         ? itemsPersonalizados.map(i => `
             <li class="custom-item">
-                <span class="custom-item-nombre">${i.nombre}</span>
+                <span class="custom-item-nombre">${sanitizeHTML(i.nombre)}</span>
                 <span class="custom-item-precio">${fmt(i.precio)}</span>
-                <button type="button" class="btn-delete" onclick="eliminarItemPersonalizado(${i.id})" aria-label="Eliminar">✕</button>
+                <button type="button" class="btn-delete" data-custom-id="${i.id}" aria-label="Eliminar">✕</button>
             </li>`).join('')
         : '<li class="custom-empty">Ningún ítem agregado aún.</li>';
+
+    // Attach delete handlers (avoids inline onclick)
+    list.querySelectorAll('.btn-delete[data-custom-id]').forEach(btn => {
+        btn.addEventListener('click', () => eliminarItemPersonalizado(parseInt(btn.dataset.customId)));
+    });
 }
 
 // ══════════════════════════════════════════
@@ -718,9 +855,10 @@ function construirCuerpoEmail() {
             if (!chk?.checked) return;
             if (s.tipo === 'nivel') {
                 const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'medio';
+                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
                 const sub = qty * (CONFIG.serviciosBase[s.key]?.[lvl] ?? 0);
-                if (sub > 0) lineas.push(`  • ${s.label} ×${qty} (${NIVELES_LABEL[lvl]}): ${fmt(sub)}`);
+                const tLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
+                if (sub > 0) lineas.push(`  • ${s.label} ×${qty} (${tLabel}): ${fmt(sub)}`);
             } else if (s.tipo === 'fijo') {
                 const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
                 lineas.push(`  • ${s.label}: ${fmt(p)}`);
@@ -731,11 +869,13 @@ function construirCuerpoEmail() {
 
     const extras = extrasActivos.map(e => `  • ${e.nombre}: ${fmt(e.precio)}`).join('\n');
 
-    return [
+    const lines = [
         esAprox ? `PRESUPUESTO APROXIMADO DAK` : `COTIZACIÓN OFICIAL DAK`,
         `══════════════════════════════`,
         `Cliente: ${nombre}`,
-        `Perfil:  ${perfilLabel} (×${multiplicador})`,
+    ];
+    if (isAdmin) lines.push(`Perfil:  ${perfilLabel} (×${multiplicador})`);
+    lines.push(
         `Fecha:   ${fecha}`,
         esAprox ? `Nota:    Los precios son ORIENTATIVOS y pueden ajustarse.` : '',
         `══════════════════════════════`,
@@ -744,12 +884,15 @@ function construirCuerpoEmail() {
         lineas.join('\n') || '  (sin servicios)',
         `──────────────────────────────`,
         `Subtotal base:          ${fmt(subtotalBase)}`,
-        `× Perfil ${perfilLabel} (${multiplicador}x): ${fmt(subtotalMult)}`,
+    );
+    if (isAdmin) lines.push(`× Perfil ${perfilLabel} (${multiplicador}x): ${fmt(subtotalMult)}`);
+    lines.push(
         extrasActivos.length ? `+ Extras:\n${extras}\n  Total extras: ${fmt(extrasTotal)}` : '',
         `──────────────────────────────`,
         `TOTAL FINAL:            ${fmt(totalFinal)}`,
         `══════════════════════════════`,
-    ].filter(Boolean).join('\n');
+    );
+    return lines.filter(Boolean).join('\n');
 }
 
 function enviarCotizacion() {
@@ -758,8 +901,10 @@ function enviarCotizacion() {
     const feedback = document.getElementById('email-feedback');
     const nombre = document.getElementById('nombre-cliente').value.trim() || 'cliente';
 
-    if (!emailDestino) {
-        feedback.textContent = '⚠️ Ingresá el email del destinatario.';
+    if (!emailDestino || !validarEmail(emailDestino)) {
+        feedback.textContent = !emailDestino
+            ? '⚠️ Ingresá el email del destinatario.'
+            : '⚠️ El formato del email no es válido.';
         feedback.className = 'email-feedback error';
         return;
     }
@@ -779,14 +924,12 @@ function enviarCotizacion() {
             total: fmt(total.totalFinal),
             mensaje: mensaje || ''
         }, EMAILJS_CONFIG.publicKey)
-            .then((response) => {
+            .then(() => {
                 feedback.textContent = '✅ Cotización enviada con éxito.';
                 feedback.className = 'email-feedback ok';
-                console.log('SUCCESS!', response.status, response.text);
             })
-            .catch((error) => {
-                console.error('FAILED...', error);
-                feedback.textContent = `❌ Error EmailJS: ${error?.text || 'Mala configuración'}`;
+            .catch(() => {
+                feedback.textContent = '❌ Error al enviar. Verificá la configuración de email.';
                 feedback.className = 'email-feedback error';
             });
     } else {
@@ -810,14 +953,14 @@ function enviarMailto(email, nombre, cuerpo, mensaje, feedbackEl) {
 // ══════════════════════════════════════════
 
 const SERVICIOS_BASE_KEYS = [
-    { key: 'video-corto', label: 'Video corto' },
+    { key: 'video-corto', label: 'Video reel / corto' },
     { key: 'video-largo', label: 'Video largo' },
     { key: 'fotos-estudio', label: 'Sesión en estudio' },
-    { key: 'fotos-eventos', label: 'Cobertura de eventos' },
     { key: 'flyer', label: 'Flyer' },
-    { key: 'portada-fb', label: 'Portada FB' },
-    { key: 'branding-manual', label: 'Branding – Manual de marca' },
-    { key: 'branding-rebranding', label: 'Branding – Rebranding completo' },
+    { key: 'branding-manual', label: 'Manual de marca' },
+    { key: 'pagina-web', label: 'Página web' },
+    { key: 'chatbot-whatsapp', label: 'Chatbot WhatsApp' },
+    { key: 'crm-setup', label: 'CRM Setup' },
 ];
 
 function abrirModalAjustes() {
@@ -918,6 +1061,43 @@ function resetearDefaults() {
 }
 
 // ══════════════════════════════════════════
+//  WIZARD STEP CLICK NAVIGATION
+// ══════════════════════════════════════════
+
+let wizardToastTimer = null;
+
+function mostrarWizardToast(mensaje) {
+    const toast = document.getElementById('wizard-toast');
+    if (!toast) return;
+    toast.textContent = mensaje;
+    toast.classList.remove('visible');
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    clearTimeout(wizardToastTimer);
+    wizardToastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+}
+
+// Track the highest step the user has reached
+let maxStepAlcanzado = 1;
+
+function manejarClickWizardStep(targetStep) {
+    if (targetStep === stepActual) return;
+
+    const minStep = isAdmin ? 1 : 2;
+    if (targetStep < minStep) return;
+
+    // Can navigate to any step already completed (< current) or already visited
+    if (targetStep <= maxStepAlcanzado) {
+        if (targetStep === 3) renderResumen();
+        irAStep(targetStep);
+        return;
+    }
+
+    // Trying to skip ahead — show notification
+    mostrarWizardToast('⚠️ Completá la sección actual antes de continuar');
+}
+
+// ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 
@@ -933,6 +1113,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.perfil-card').forEach(c =>
         c.addEventListener('click', () => seleccionarPerfil(c.dataset.perfil))
     );
+
+    // Wizard step click navigation
+    document.querySelectorAll('.wizard-step').forEach(el => {
+        el.addEventListener('click', () => {
+            const targetStep = parseInt(el.dataset.step);
+            manejarClickWizardStep(targetStep);
+        });
+    });
 
     // Modal
     document.getElementById('btn-ajustes').addEventListener('click', abrirModalAjustes);
@@ -977,6 +1165,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('admin-pass')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') procesarLoginAdmin();
     });
+
+    // Logout buttons (header + settings modal)
+    document.getElementById('btn-logout')?.addEventListener('click', logoutAdmin);
+    document.getElementById('btn-logout-modal')?.addEventListener('click', logoutAdmin);
 
     // Escape closes modal
     document.addEventListener('keydown', e => {

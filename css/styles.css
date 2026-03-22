@@ -156,6 +156,14 @@ h1 {
     background-clip: text;
 }
 
+.titulo-link {
+    text-decoration: none;
+}
+
+.titulo-link:hover h1 {
+    filter: brightness(1.2);
+}
+
 .logo-dak {
     height: 26px;
     width: auto;
@@ -187,6 +195,85 @@ h1 {
     height: 22px;
 }
 
+/* ── Logout button (header) ── */
+.btn-logout {
+    margin-left: 0;
+    border-color: rgba(255, 60, 80, 0.3);
+    color: #fc8181;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 60, 80, 0.15);
+    border-color: rgba(255, 60, 80, 0.5);
+}
+
+/* ── Logout button (settings modal) ── */
+.btn-logout-modal {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 60, 80, 0.35);
+    background: rgba(255, 60, 80, 0.08);
+    color: #fc8181;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-logout-modal:hover {
+    background: rgba(255, 60, 80, 0.2);
+    border-color: rgba(255, 60, 80, 0.6);
+}
+
+/* ── Service info tooltip (ⓘ) ── */
+.svc-info-wrap {
+    position: relative;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.svc-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: help;
+    transition: color 0.2s;
+}
+
+.svc-info-icon:hover {
+    color: var(--color-secondary);
+}
+
+.svc-info-tip {
+    position: fixed;
+    min-width: 220px;
+    max-width: 280px;
+    padding: 10px 14px;
+    background: rgba(12, 10, 20, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(176, 36, 255, 0.35);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(176, 36, 255, 0.1);
+}
+
 /* ── Wizard Progress ── */
 .wizard-progress {
     display: flex;
@@ -202,6 +289,8 @@ h1 {
     align-items: center;
     gap: 6px;
     min-width: 60px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .wizard-step-num {
@@ -243,6 +332,40 @@ h1 {
 
 .wizard-step.completado .wizard-step-label {
     color: #a78bbf;
+}
+
+.wizard-step.completado:hover .wizard-step-num {
+    filter: brightness(1.3);
+    transform: scale(1.08);
+}
+
+/* ── Wizard toast notification ── */
+.wizard-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 10px 20px;
+    background: rgba(12, 10, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(246, 204, 107, 0.45);
+    border-radius: 10px;
+    color: #f6cc6b;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(246, 204, 107, 0.1);
+}
+
+.wizard-toast.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 .wizard-line {
@@ -784,6 +907,44 @@ textarea.text-input {
     font-weight: 600;
 }
 
+/* ── Badge NUEVO para categoría ── */
+.badge-nuevo {
+    display: inline-block;
+    padding: 3px 7px;
+    margin-left: 6px;
+    background: linear-gradient(135deg, #ff6b35, #ff4500);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    box-shadow: 0 0 8px rgba(255, 69, 0, 0.5);
+    animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ── Badge NUEVO en service cards ── */
+.svc-badge-nuevo {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 2px 7px;
+    background: linear-gradient(135deg, #ff6b35, #ff4500);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    border-radius: 4px;
+    text-transform: uppercase;
+    z-index: 2;
+}
+
 .cat-panel {
     animation: fadeIn 0.2s ease;
 }
@@ -798,10 +959,12 @@ textarea.text-input {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
     margin-bottom: 16px;
+    align-items: start;
 }
 
 /* Unchecked → dimmed/greyscale */
 .svc-card {
+    position: relative;
     background: var(--surface-glass);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -1943,6 +2106,7 @@ textarea.text-input {
 }
 
 /* ── Tooltip DAK (hover permiso) ── */
+/* ── Unified tooltip/toast for admin lock ── */
 .tooltip-dak {
     position: absolute;
     bottom: calc(100% + 8px);
@@ -1965,7 +2129,7 @@ textarea.text-input {
     opacity: 0;
     visibility: hidden;
     transform: translateY(4px);
-    transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease;
+    transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
     pointer-events: none;
     z-index: 50;
     white-space: nowrap;
@@ -1982,6 +2146,7 @@ textarea.text-input {
     border-right: 1px solid rgba(176, 36, 255, 0.35);
     border-bottom: 1px solid rgba(176, 36, 255, 0.35);
     transform: rotate(45deg);
+    transition: border-color 0.25s ease;
 }
 
 .toggle-aprox:hover .tooltip-dak {
@@ -1990,44 +2155,27 @@ textarea.text-input {
     transform: translateY(0);
 }
 
-/* ── Toast error admin (click fallback) ── */
-.toast-error-admin {
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%) translateY(4px);
-    padding: 8px 16px;
-    background: rgba(12, 10, 20, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 60, 80, 0.35);
-    border-radius: 8px;
+/* Error state: on click, turns red and shakes */
+.tooltip-dak.tooltip-error {
+    border-color: rgba(255, 60, 80, 0.5);
     color: #fc8181;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.25s, visibility 0.25s, transform 0.25s;
-    pointer-events: none;
-    z-index: 50;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(255, 60, 80, 0.15);
+    animation: tooltip-shake 0.4s ease;
 }
 
-.toast-error-admin.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
+.tooltip-dak.tooltip-error::before {
+    border-right-color: rgba(255, 60, 80, 0.5);
+    border-bottom-color: rgba(255, 60, 80, 0.5);
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    20% { transform: translateX(calc(-50% + 4px)) translateY(0); }
-    40% { transform: translateX(calc(-50% - 4px)) translateY(0); }
-    60% { transform: translateX(calc(-50% + 2px)) translateY(0); }
-    80% { transform: translateX(calc(-50% - 2px)) translateY(0); }
-}
-
-.toast-error-admin.shake {
-    animation: shake 0.4s ease;
+@keyframes tooltip-shake {
+    0%, 100% { transform: translateY(0); }
+    20% { transform: translateY(0) translateX(4px); }
+    40% { transform: translateY(0) translateX(-4px); }
+    60% { transform: translateY(0) translateX(2px); }
+    80% { transform: translateY(0) translateX(-2px); }
 }
 
 /* ── Responsive ── */
