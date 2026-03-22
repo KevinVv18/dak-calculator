@@ -5,6 +5,12 @@
     --color-secondary: #B024FF;
     --color-accent: #B024FF;
     --color-white: #ffffff;
+    /* Accent palette */
+    --accent-teal: #00C8C8;
+    --accent-green: #00B478;
+    --accent-warm: #D4A574;
+    --accent-orange: #FF6B35;
+    --accent-blue: #4A90E2;
     /* Glassmorphism surfaces — less color, more clarity */
     --surface-1: rgba(255, 255, 255, 0.04);
     --surface-2: rgba(255, 255, 255, 0.07);
@@ -87,7 +93,7 @@ body {
 .bg-orb-4 {
     width: 250px;
     height: 250px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 200, 200, 0.18) 0%, transparent 70%);
     top: 30%;
     left: 50%;
     animation: orbFloat4 16s ease-in-out infinite;
@@ -249,7 +255,7 @@ h1 {
 }
 
 .svc-info-icon:hover {
-    color: var(--color-secondary);
+    color: var(--accent-blue);
 }
 
 .svc-info-tip {
@@ -325,13 +331,13 @@ h1 {
 }
 
 .wizard-step.completado .wizard-step-num {
-    border-color: var(--color-secondary);
-    background: var(--color-secondary);
+    border-color: var(--accent-teal);
+    background: var(--accent-teal);
     color: #fff;
 }
 
 .wizard-step.completado .wizard-step-label {
-    color: #a78bbf;
+    color: rgba(0, 200, 200, 0.7);
 }
 
 .wizard-step.completado:hover .wizard-step-num {
@@ -379,7 +385,7 @@ h1 {
 }
 
 .wizard-line.completada {
-    background: var(--color-secondary);
+    background: var(--accent-teal);
 }
 
 /* ── Step panels ── */
@@ -500,7 +506,7 @@ h1 {
 
 .tag-opcional {
     font-size: 11px;
-    color: #60708a;
+    color: var(--accent-warm);
     font-weight: 400;
     margin-left: 6px;
     background: var(--surface-2);
@@ -1032,7 +1038,7 @@ textarea.text-input {
 }
 
 .svc-card.activo .svc-card-price {
-    color: rgba(176, 36, 255, 0.9);
+    color: var(--accent-teal);
 }
 
 .svc-card-body {
@@ -1442,7 +1448,7 @@ textarea.text-input {
     font-size: 24px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    background: linear-gradient(90deg, #fff 30%, var(--color-secondary));
+    background: linear-gradient(90deg, #fff 30%, var(--accent-teal));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

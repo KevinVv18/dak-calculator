@@ -68,9 +68,9 @@ const FACTORES_EXTRA = {
 
 // ── Descripciones para tooltips de info (ⓘ) ──
 const SERVICE_INFO = {
-    "video-corto":         "Simple: talking head, unboxing, testimonio.\nCon producción: motion graphics, multicámara.",
-    "video-largo":         "Simple: entrevista, corporativo directo.\nCon producción: cinematográfico, multicámara.",
-    "fotos-estudio":       "Básica: fondo liso, producto.\nCon producción: set armado, iluminación profesional.",
+    "video-corto":         "Simple: presentador a cámara, unboxing, testimonio.\nProducción: motion graphics, multicámara.",
+    "video-largo":         "Simple: entrevista, corporativo directo.\nProducción: cinematográfico, multicámara.",
+    "fotos-estudio":       "Básica: fondo liso, producto.\nProducción: set armado, iluminación profesional.",
     "foto-tematica":       "Sesión con escenografía o temática específica del cliente.",
     "fotos-eventos":       "Cobertura fotográfica completa de eventos sociales o corporativos.",
     "flyer":               "Básico: diseño simple 1 cara.\nAvanzado: doble cara con ilustración.",
@@ -109,9 +109,9 @@ const CATEGORIAS = [
     {
         id: "video-foto", label: "🎬 Video & Foto",
         servicios: [
-            { tipo: "nivel", key: "video-corto",   label: "Video reel / corto",  unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Pro" } },
-            { tipo: "nivel", key: "video-largo",    label: "Video largo",         unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Pro" } },
-            { tipo: "nivel", key: "fotos-estudio",  label: "Sesión en estudio",   unidad: "sesiones", tierLabels: { basico: "Básica", avanzado: "Pro" } },
+            { tipo: "nivel", key: "video-corto",   label: "Video reel / corto",  unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Producción" } },
+            { tipo: "nivel", key: "video-largo",    label: "Video largo",         unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Producción" } },
+            { tipo: "nivel", key: "fotos-estudio",  label: "Sesión en estudio",   unidad: "sesiones", tierLabels: { basico: "Básica", avanzado: "Producción" } },
             { tipo: "fijo",  key: "foto-tematica",  label: "Sesión por temática" },
             { tipo: "fijo",  key: "fotos-eventos",  label: "Cobertura de eventos" },
         ]

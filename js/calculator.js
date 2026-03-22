@@ -102,15 +102,22 @@ function actualizarVistaAdmin() {
 
     const btnLogout = document.getElementById('btn-logout');
 
+    const perfilSection = document.querySelector('.perfil-cards');
+    const perfilHint = document.getElementById('perfil-hint');
+    const perfilLabel = perfilSection?.closest('.field-group')?.querySelector('label');
+
     if (isAdmin) {
         if (btnAdmin) btnAdmin.style.display = 'none';
         if (btnAjustes) btnAjustes.style.display = 'flex';
         if (btnLogout) btnLogout.style.display = 'flex';
         if (lockIcon) lockIcon.style.display = 'none';
         if (tooltip) tooltip.style.display = 'none';
-        // Admin sees step 1 (perfil)
+        // Admin sees step 1 with perfil
         if (wizardStep1) wizardStep1.style.display = '';
         if (line12) line12.style.display = '';
+        if (perfilSection) perfilSection.style.display = '';
+        if (perfilHint) perfilHint.style.display = '';
+        if (perfilLabel) perfilLabel.style.display = '';
         cerrarModalLoginAdmin();
     } else {
         if (btnAdmin) btnAdmin.style.display = 'flex';
@@ -118,29 +125,13 @@ function actualizarVistaAdmin() {
         if (btnLogout) btnLogout.style.display = 'none';
         if (lockIcon) lockIcon.style.display = 'inline-block';
         if (tooltip) tooltip.style.display = '';
-        // Non-admin: hide step 1, set default perfil, go to step 2
-        if (wizardStep1) wizardStep1.style.display = 'none';
-        if (line12) line12.style.display = 'none';
+        // Non-admin: show step 1 but hide perfil section
+        if (wizardStep1) wizardStep1.style.display = '';
+        if (line12) line12.style.display = '';
+        if (perfilSection) perfilSection.style.display = 'none';
+        if (perfilHint) perfilHint.style.display = 'none';
+        if (perfilLabel) perfilLabel.style.display = 'none';
         document.getElementById('perfil-cliente').value = 'bajo';
-        if (maxStepAlcanzado < 2) maxStepAlcanzado = 2;
-        if (stepActual === 1) {
-            if (step1) step1.classList.add('hidden');
-            document.getElementById('step-2').classList.remove('hidden');
-            stepActual = 2;
-            // Update wizard progress for step 2
-            document.querySelectorAll('.wizard-step').forEach(el => {
-                const sn = parseInt(el.dataset.step);
-                el.classList.toggle('activo', sn === 2);
-                el.classList.toggle('completado', sn < 2);
-            });
-            document.getElementById('line-2-3').classList.toggle('completada', false);
-            document.getElementById('btn-anterior').classList.add('hidden');
-            document.getElementById('btn-siguiente').classList.remove('hidden');
-        }
-        // Always hide Anterior on step 2 for non-admin
-        if (stepActual === 2) {
-            document.getElementById('btn-anterior').classList.add('hidden');
-        }
     }
 }
 
@@ -229,8 +220,7 @@ function irAStep(n) {
 
     const btnAnt = document.getElementById('btn-anterior');
     const btnSig = document.getElementById('btn-siguiente');
-    const minStep = isAdmin ? 1 : 2;
-    btnAnt.classList.toggle('hidden', n <= minStep);
+    btnAnt.classList.toggle('hidden', n <= 1);
     btnSig.classList.toggle('hidden', n === 3);
 
     stepActual = n;
@@ -249,11 +239,11 @@ function irAlSiguiente() {
 }
 
 function irAlAnterior() {
-    const minStep = isAdmin ? 1 : 2;
-    if (stepActual > minStep) irAStep(stepActual - 1);
+    if (stepActual > 1) irAStep(stepActual - 1);
 }
 
 function validarStep1() {
+    if (!isAdmin) return true; // Non-admin: perfil hidden, always pass
     const perfil = document.getElementById('perfil-cliente').value;
     if (!perfil) {
         document.getElementById('perfil-hint').classList.remove('oculto');
