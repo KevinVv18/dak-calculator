@@ -1190,8 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //  AGENDAR CITA — Google Calendar
 // ══════════════════════════════════════════
 
-const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-    ? '' : 'https://dak-calculator.vercel.app';
+const API_BASE = 'https://dak-calculator.vercel.app';
 
 let citaSlots = {};
 let citaSelectedDay = null;
