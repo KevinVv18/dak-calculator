@@ -60,7 +60,13 @@ body {
     border-radius: 50%;
     filter: blur(80px);
     opacity: 0.5;
-    will-change: transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Reduce motion for users who prefer it + fix Safari compositing */
+@media (prefers-reduced-motion: reduce) {
+    .bg-orb { animation: none !important; }
 }
 
 .bg-orb-1 {
@@ -265,6 +271,7 @@ h1 {
     padding: 10px 14px;
     background: rgba(12, 10, 20, 0.95);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(176, 36, 255, 0.35);
     border-radius: 10px;
     color: rgba(255, 255, 255, 0.85);
@@ -354,6 +361,7 @@ h1 {
     padding: 10px 20px;
     background: rgba(12, 10, 20, 0.95);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(246, 204, 107, 0.45);
     border-radius: 10px;
     color: #f6cc6b;
@@ -1358,6 +1366,7 @@ textarea.text-input {
     padding: 10px 12px;
     background: var(--surface-glass);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -2322,6 +2331,7 @@ textarea.text-input {
     border: 1px solid rgba(0, 200, 200, 0.25);
     background: linear-gradient(135deg, rgba(0, 200, 200, 0.06) 0%, rgba(0, 180, 120, 0.04) 100%);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     transition: border-color 0.3s, transform 0.3s;
 }
 

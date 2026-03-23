@@ -1184,6 +1184,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     actualizarFlotante();
     actualizarVistaAdmin();
+
+    // Reveal page after state is set (prevents admin→user flicker)
+    document.body.classList.add('ready');
 });
 
 // ══════════════════════════════════════════

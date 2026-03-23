@@ -10,7 +10,9 @@
     <link rel="shortcut icon" href="assets/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="css/styles.css?v=5">
+    <link rel="stylesheet" href="css/styles.css?v=6">
+    <!-- Prevent FOUC: hide body until JS initializes -->
+    <style>body{opacity:0}body.ready{opacity:1;transition:opacity .15s ease}</style>
 </head>
 
 <body>
