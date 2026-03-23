@@ -226,15 +226,33 @@
                 <p class="email-feedback" id="email-feedback"></p>
             </div>
 
-            <div class="card cita-card">
-                <h3 class="card-subtitle">📅 ¿Quieres agendar una reunión?</h3>
-                <p class="card-desc">Agenda una videollamada con el equipo DAK para discutir tu cotización.</p>
-                <button type="button" id="btn-agendar" class="btn-agendar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                    Agendar reunión
-                </button>
+            <div class="cita-card">
+                <div class="cita-card-glow"></div>
+                <div class="cita-card-content">
+                    <div class="cita-card-header">
+                        <div class="cita-card-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="cita-card-title">Agendar reunión</h3>
+                            <p class="cita-card-desc">Conversemos sobre tu proyecto en una videollamada con Google Meet</p>
+                        </div>
+                    </div>
+                    <div class="cita-card-features">
+                        <span class="cita-feature"><span class="cita-feature-dot"></span>30-60 min</span>
+                        <span class="cita-feature"><span class="cita-feature-dot"></span>Google Meet</span>
+                        <span class="cita-feature"><span class="cita-feature-dot"></span>Gratis</span>
+                    </div>
+                    <button type="button" id="btn-agendar" class="btn-agendar">
+                        Elegir horario
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 

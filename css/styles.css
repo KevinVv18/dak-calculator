@@ -2315,28 +2315,129 @@ textarea.text-input {
    AGENDAR CITA
    ══════════════════════════════════════ */
 
+.cita-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    border: 1px solid rgba(0, 200, 200, 0.25);
+    background: linear-gradient(135deg, rgba(0, 200, 200, 0.06) 0%, rgba(0, 180, 120, 0.04) 100%);
+    backdrop-filter: blur(12px);
+    transition: border-color 0.3s, transform 0.3s;
+}
+
+.cita-card:hover {
+    border-color: rgba(0, 200, 200, 0.45);
+    transform: translateY(-2px);
+}
+
+.cita-card-glow {
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(0, 200, 200, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    transition: opacity 0.4s;
+}
+
+.cita-card:hover .cita-card-glow {
+    opacity: 1.5;
+}
+
+.cita-card-content {
+    position: relative;
+    padding: 24px;
+    z-index: 1;
+}
+
+.cita-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.cita-card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(0, 200, 200, 0.18), rgba(0, 180, 120, 0.12));
+    border: 1px solid rgba(0, 200, 200, 0.25);
+    color: var(--accent-teal);
+}
+
+.cita-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+}
+
+.cita-card-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.5;
+}
+
+.cita-card-features {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.cita-feature {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.02em;
+}
+
+.cita-feature-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-teal);
+    box-shadow: 0 0 6px rgba(0, 200, 200, 0.5);
+}
+
 .btn-agendar {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, var(--accent-teal), var(--accent-green));
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
+    gap: 10px;
+    padding: 12px 28px;
+    background: transparent;
+    color: var(--accent-teal);
+    border: 1.5px solid var(--accent-teal);
+    border-radius: 50px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.02em;
+    transition: all 0.3s;
 }
 
 .btn-agendar:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(0, 200, 200, 0.35);
+    background: rgba(0, 200, 200, 0.12);
+    box-shadow: 0 0 24px rgba(0, 200, 200, 0.2), inset 0 0 12px rgba(0, 200, 200, 0.06);
+    transform: translateX(4px);
 }
 
-.cita-card {
-    border: 1px solid rgba(0, 200, 200, 0.2);
+.btn-agendar svg {
+    transition: transform 0.3s;
+}
+
+.btn-agendar:hover svg {
+    transform: translateX(4px);
 }
 
 .cita-desc {
