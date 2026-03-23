@@ -225,12 +225,58 @@
                 </button>
                 <p class="email-feedback" id="email-feedback"></p>
             </div>
+
+            <div class="card cita-card">
+                <h3 class="card-subtitle">📅 ¿Quieres agendar una reunión?</h3>
+                <p class="card-desc">Agenda una videollamada con el equipo DAK para discutir tu cotización.</p>
+                <button type="button" id="btn-agendar" class="btn-agendar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Agendar reunión
+                </button>
+            </div>
         </div>
 
         <!-- Navegación wizard -->
         <div class="wizard-nav">
             <button type="button" id="btn-anterior" class="btn-secondary hidden">← Anterior</button>
             <button type="button" id="btn-siguiente" class="btn-primary">Siguiente →</button>
+        </div>
+    </div>
+
+    <!-- Modal Agendar Cita -->
+    <div id="modal-cita" class="modal-ajustes" role="dialog" aria-labelledby="modal-cita-titulo" aria-hidden="true">
+        <div class="modal-ajustes-contenido modal-cita-contenido">
+            <div class="modal-ajustes-header">
+                <h2 id="modal-cita-titulo">📅 Agendar reunión</h2>
+                <button type="button" class="modal-ajustes-cerrar" id="modal-cita-cerrar" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-ajustes-body modal-cita-body">
+                <p class="cita-desc">Elige un horario disponible para una reunión con el equipo DAK.</p>
+
+                <div id="cita-loading" class="cita-loading">
+                    <div class="cita-spinner"></div>
+                    <span>Cargando disponibilidad...</span>
+                </div>
+
+                <div id="cita-error" class="cita-error" style="display:none;"></div>
+
+                <div id="cita-calendario" class="cita-calendario" style="display:none;">
+                    <div class="cita-dias" id="cita-dias"></div>
+                    <div class="cita-horas" id="cita-horas">
+                        <p class="cita-hint">← Selecciona un día</p>
+                    </div>
+                </div>
+
+                <div id="cita-confirmacion" class="cita-confirmacion" style="display:none;">
+                    <div class="cita-resumen" id="cita-resumen"></div>
+                </div>
+            </div>
+            <div class="modal-ajustes-footer">
+                <button type="button" class="btn-secondary" id="btn-cita-cancelar">Cancelar</button>
+                <button type="button" class="btn-primary" id="btn-cita-confirmar" disabled>Confirmar cita</button>
+            </div>
         </div>
     </div>
 

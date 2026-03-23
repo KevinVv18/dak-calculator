@@ -1168,6 +1168,188 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Agendar cita
+    document.getElementById('btn-agendar')?.addEventListener('click', abrirModalCita);
+    document.getElementById('modal-cita-cerrar')?.addEventListener('click', cerrarModalCita);
+    document.getElementById('btn-cita-cancelar')?.addEventListener('click', cerrarModalCita);
+    document.getElementById('btn-cita-confirmar')?.addEventListener('click', confirmarCita);
+    document.getElementById('modal-cita')?.addEventListener('click', ev => {
+        if (ev.target === ev.currentTarget) cerrarModalCita();
+    });
+
+    // Escape closes cita modal too
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') cerrarModalCita();
+    });
+
     actualizarFlotante();
     actualizarVistaAdmin();
 });
+
+// ══════════════════════════════════════════
+//  AGENDAR CITA — Google Calendar
+// ══════════════════════════════════════════
+
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? '' : 'https://dak-calculator.vercel.app';
+
+let citaSlots = {};
+let citaSelectedDay = null;
+let citaSelectedSlot = null;
+
+function abrirModalCita() {
+    const modal = document.getElementById('modal-cita');
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('modal-ajustes--abierto');
+
+    // Reset state
+    citaSelectedDay = null;
+    citaSelectedSlot = null;
+    document.getElementById('btn-cita-confirmar').disabled = true;
+    document.getElementById('cita-loading').style.display = 'flex';
+    document.getElementById('cita-calendario').style.display = 'none';
+    document.getElementById('cita-confirmacion').style.display = 'none';
+    document.getElementById('cita-error').style.display = 'none';
+
+    cargarDisponibilidad();
+}
+
+function cerrarModalCita() {
+    const modal = document.getElementById('modal-cita');
+    if (modal) {
+        modal.setAttribute('aria-hidden', 'true');
+        modal.classList.remove('modal-ajustes--abierto');
+    }
+}
+
+async function cargarDisponibilidad() {
+    try {
+        const res = await fetch(`${API_BASE}/api/disponibilidad`);
+        if (!res.ok) throw new Error('Error del servidor');
+        const data = await res.json();
+        citaSlots = data.slots || {};
+
+        document.getElementById('cita-loading').style.display = 'none';
+
+        const dias = Object.keys(citaSlots);
+        if (dias.length === 0) {
+            document.getElementById('cita-error').textContent = 'No hay horarios disponibles en las próximas 2 semanas.';
+            document.getElementById('cita-error').style.display = 'block';
+            return;
+        }
+
+        renderDias(dias);
+        document.getElementById('cita-calendario').style.display = 'flex';
+    } catch (err) {
+        document.getElementById('cita-loading').style.display = 'none';
+        document.getElementById('cita-error').textContent = 'No se pudo cargar la disponibilidad. Intenta más tarde.';
+        document.getElementById('cita-error').style.display = 'block';
+    }
+}
+
+function renderDias(dias) {
+    const container = document.getElementById('cita-dias');
+    container.innerHTML = dias.map(dia =>
+        `<button type="button" class="cita-dia-btn" data-dia="${sanitizeHTML(dia)}">${sanitizeHTML(dia)}</button>`
+    ).join('');
+
+    container.querySelectorAll('.cita-dia-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            citaSelectedDay = btn.dataset.dia;
+            citaSelectedSlot = null;
+            document.getElementById('btn-cita-confirmar').disabled = true;
+            container.querySelectorAll('.cita-dia-btn').forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            renderHoras(citaSlots[citaSelectedDay]);
+        });
+    });
+}
+
+function renderHoras(horas) {
+    const container = document.getElementById('cita-horas');
+    container.innerHTML = horas.map(h =>
+        `<button type="button" class="cita-hora-btn" data-start="${h.start}" data-end="${h.end}">${sanitizeHTML(h.hour)}</button>`
+    ).join('');
+
+    container.querySelectorAll('.cita-hora-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            citaSelectedSlot = { start: btn.dataset.start, end: btn.dataset.end, hour: btn.textContent };
+            container.querySelectorAll('.cita-hora-btn').forEach(b => b.classList.remove('activo'));
+            btn.classList.add('activo');
+            document.getElementById('btn-cita-confirmar').disabled = false;
+        });
+    });
+}
+
+async function confirmarCita() {
+    if (!citaSelectedSlot || !citaSelectedDay) return;
+
+    const btn = document.getElementById('btn-cita-confirmar');
+    btn.disabled = true;
+    btn.textContent = 'Agendando...';
+
+    const nombre = document.getElementById('nombre-cliente')?.value || '';
+    const email = document.getElementById('email-destino')?.value
+        || document.getElementById('email-cliente')?.value || '';
+
+    if (!email || !validarEmail(email)) {
+        btn.textContent = 'Confirmar cita';
+        btn.disabled = false;
+        document.getElementById('cita-error').textContent = 'Ingresa un email válido en la cotización primero.';
+        document.getElementById('cita-error').style.display = 'block';
+        return;
+    }
+
+    // Build services summary
+    const servicios = Array.from(document.querySelectorAll('.svc-card.activo'))
+        .map(c => c.querySelector('.svc-card-name')?.textContent || '')
+        .filter(Boolean)
+        .join(', ');
+
+    try {
+        const res = await fetch(`${API_BASE}/api/agendar-cita`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre,
+                email,
+                fecha_inicio: citaSelectedSlot.start,
+                fecha_fin: citaSelectedSlot.end,
+                servicios,
+            }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.error || 'Error al agendar');
+        }
+
+        // Show confirmation
+        document.getElementById('cita-calendario').style.display = 'none';
+        document.getElementById('cita-error').style.display = 'none';
+
+        const meetHtml = data.meetLink
+            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="cita-meet-link">🎥 Unirse a Google Meet</a>`
+            : '';
+
+        document.getElementById('cita-resumen').innerHTML = `
+            <span class="cita-success-icon">✅</span>
+            <strong>¡Cita agendada!</strong><br><br>
+            📅 <strong>${sanitizeHTML(citaSelectedDay)}</strong> a las <strong>${sanitizeHTML(citaSelectedSlot.hour)}</strong><br>
+            📧 Se envió invitación a <strong>${sanitizeHTML(email)}</strong><br>
+            ${meetHtml}
+        `;
+        document.getElementById('cita-confirmacion').style.display = 'block';
+
+        // Change footer buttons
+        btn.textContent = 'Listo';
+        btn.disabled = true;
+        document.getElementById('btn-cita-cancelar').textContent = 'Cerrar';
+    } catch (err) {
+        document.getElementById('cita-error').textContent = err.message;
+        document.getElementById('cita-error').style.display = 'block';
+        btn.textContent = 'Confirmar cita';
+        btn.disabled = false;
+    }
+}
