@@ -426,6 +426,29 @@ input.stepper-input[type="number"] {
     50% { opacity: 0.7; }
 }
 
+/* ── Category Collapsible Body (mobile) ── */
+.cat-body {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.cat-body--collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Desktop: always expanded, override collapse */
+@media (min-width: 1024px) {
+    .cat-body--collapsed {
+        max-height: 2000px;
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
 /* ── Extras Item (sidebar) ── */
 .extra-item {
     display: flex;
