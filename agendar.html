@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Reunión Gratuita - DAK Agency</title>
+    <meta name="description" content="Agenda una reunión gratuita de 60 minutos con DAK Agency vía Google Meet. Revisamos tu proyecto y te damos un plan personalizado.">
+
+    <!-- Open Graph / FB Pixel ready -->
+    <meta property="og:title" content="Agendar Reunión Gratuita - DAK Agency">
+    <meta property="og:description" content="Reunión de 60 min por Google Meet. Gratis. Zona horaria Lima, Perú.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://plan.dakagency.net/agendar.html">
+    <meta property="og:image" content="https://dakagency.net/assets/og-agendar.png">
+    <meta property="og:locale" content="es_PE">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Agendar Reunión - DAK Agency">
+    <meta name="twitter:description" content="Reunión gratuita de 60 min por Google Meet.">
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="shortcut icon" href="assets/favicon.svg">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css?v=7">
+    <link rel="stylesheet" href="css/agendar.css?v=1">
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#322939",
+                        "surface-variant": "#2b2232",
+                        "tertiary": "#85b9ff",
+                        "secondary": "#5ff8f8",
+                        "tertiary-dim": "#5ca0f3",
+                        "surface-dim": "#120c16",
+                        "surface": "#120c16",
+                        "secondary-container": "#006a6a",
+                        "primary-dim": "#b023ff",
+                        "outline-variant": "#4d4552",
+                        "on-surface": "#f9edfd",
+                        "outline": "#7b7280",
+                        "surface-container-high": "#241d2b",
+                        "surface-container-lowest": "#000000",
+                        "surface-tint": "#d692ff",
+                        "on-surface-variant": "#b2a7b6",
+                        "background": "#120c16",
+                        "on-error-container": "#ffb2b9",
+                        "surface-container-highest": "#2b2232",
+                        "primary-container": "#ce7eff",
+                        "on-primary-container": "#3a005a",
+                        "surface-container": "#1e1724",
+                        "inverse-primary": "#9400dc",
+                        "error": "#ff6e84",
+                        "primary": "#d692ff",
+                        "error-dim": "#d73357",
+                        "surface-container-low": "#17111c",
+                    },
+                    fontFamily: {
+                        headline: ["Inter", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                        label: ["Inter", "sans-serif"],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-[#030106] text-on-surface font-body overflow-hidden min-h-screen">
+
+    <!-- Ambient orbs -->
+    <div class="orb w-[500px] h-[500px] bg-primary-dim top-[-100px] left-[-10%]" aria-hidden="true"></div>
+    <div class="orb w-[600px] h-[600px] bg-secondary bottom-[-200px] right-[-10%]" aria-hidden="true"></div>
+    <div class="bg-grid fixed inset-0 z-0" aria-hidden="true"></div>
+
+    <!-- Full-Screen Scheduling Page -->
+    <div class="relative z-10 w-full h-screen flex flex-col">
+
+        <!-- Header -->
+        <header class="fixed top-0 w-full z-20 bg-[#030106]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(176,36,255,0.15)]">
+            <div class="flex justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full max-w-6xl mx-auto">
+                <div class="flex items-center gap-4 sm:gap-5">
+                    <div class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary-dim/10 text-primary-dim">
+                        <span class="material-symbols-outlined text-2xl">calendar_today</span>
+                    </div>
+                    <div>
+                        <h1 class="font-black tracking-tight text-xl sm:text-2xl text-white">Agendar reunión</h1>
+                        <div class="flex gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
+                            <span class="cita-badge">60 min</span>
+                            <span class="cita-badge">Google Meet</span>
+                            <span class="cita-badge cita-badge--teal">Gratis</span>
+                            <span class="cita-badge">Lambayeque, PE</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="index.html" id="btn-back" class="p-2.5 text-on-surface-variant hover:bg-white/5 transition-colors rounded-full active:scale-95" title="Volver al calculador" aria-label="Volver">
+                    <span class="material-symbols-outlined">close</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="cita-main" id="agendar-main">
+            <!-- Loading -->
+            <div id="agendar-loading" class="w-full flex flex-col items-center justify-center py-20">
+                <div class="cita-spinner-lg"></div>
+                <span class="text-sm text-on-surface-variant mt-4">Cargando disponibilidad...</span>
+            </div>
+
+            <!-- Error -->
+            <div id="agendar-error" class="w-full" style="display:none">
+                <div class="glass-panel p-8 rounded-2xl border border-white/5 text-center max-w-md mx-auto">
+                    <span class="material-symbols-outlined text-4xl text-error mb-3 block">error_outline</span>
+                    <p class="text-sm text-error" id="agendar-error-msg">No se pudo cargar la disponibilidad.</p>
+                    <button type="button" id="agendar-retry-btn" class="mt-4 px-5 py-2 text-xs font-bold uppercase tracking-widest border border-outline-variant/30 text-on-surface-variant hover:text-white hover:border-primary-dim/50 rounded-lg transition-all">Reintentar</button>
+                </div>
+            </div>
+
+            <!-- Left Column: Calendar + Form -->
+            <section id="agendar-left-col" class="w-full lg:w-[55%] space-y-6" style="display:none">
+                <!-- Calendar -->
+                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 shadow-2xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold tracking-tight" id="agendar-month-title">—</h3>
+                        <div class="flex gap-3">
+                            <button type="button" id="agendar-prev-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
+                                <span class="material-symbols-outlined text-sm">chevron_left</span>
+                            </button>
+                            <button type="button" id="agendar-next-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2 text-center text-on-surface-variant text-[11px] font-bold uppercase tracking-widest mb-3">
+                        <div>Lu</div><div>Ma</div><div>Mi</div><div>Ju</div><div>Vi</div><div class="text-white/20">Sá</div><div class="text-white/20">Do</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="agendar-cal-grid"></div>
+                </div>
+
+                <!-- Contact Details -->
+                <div class="space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-primary-dim">Detalles del contacto</h3>
+                    <div class="space-y-3">
+                        <input id="agendar-nombre" type="text" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="Tu nombre completo" maxlength="100">
+                        <input id="agendar-email" type="email" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="tu@email.com">
+                        <textarea id="agendar-mensaje" rows="2" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm resize-none" placeholder="Cuéntanos brevemente sobre tu proyecto (opcional)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Services summary (populated via URL params) -->
+                <div id="agendar-services" class="space-y-3" style="display:none">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-primary-dim">Servicios seleccionados</h3>
+                    <div id="agendar-services-list" class="space-y-1"></div>
+                    <div class="flex justify-between items-center pt-2 border-t border-outline-variant/10">
+                        <span class="text-xs font-bold uppercase text-on-surface-variant">Total estimado</span>
+                        <span id="agendar-services-total" class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-dim to-secondary">S/ 0</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Time Slots -->
+            <section id="agendar-right-col" class="w-full lg:w-[45%] flex flex-col" style="display:none">
+                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 flex-1 flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold tracking-tight mb-1">Horarios disponibles</h3>
+                        <p class="text-xs font-light text-on-surface-variant italic">Zona horaria: America/Lima · Lambayeque, PE (GMT-5)</p>
+                    </div>
+                    <div id="agendar-slots-container" class="space-y-6 overflow-y-auto pr-2 sidebar-scroll flex-1">
+                        <p class="text-sm text-on-surface-variant text-center py-8 opacity-50">← Selecciona un día en el calendario</p>
+                    </div>
+                    <!-- Summary Selection Card -->
+                    <div id="agendar-summary-card" class="mt-auto pt-6 border-t border-white/10" style="display:none">
+                        <div class="bg-secondary-dim/10 rounded-xl p-4 flex items-center gap-4 border border-secondary-dim/20">
+                            <div class="w-10 h-10 rounded-lg bg-secondary-dim flex items-center justify-center text-[#004747] flex-shrink-0">
+                                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">schedule</span>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black uppercase tracking-[0.1em] text-secondary-dim">Reunión seleccionada</p>
+                                <p class="text-sm font-bold text-white" id="agendar-summary-text">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Confirmation Screen -->
+            <div id="agendar-confirmacion" class="w-full" style="display:none">
+                <div class="glass-panel p-8 sm:p-10 rounded-2xl border border-white/5 text-center max-w-lg mx-auto">
+                    <div id="agendar-resumen"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Actions -->
+        <footer class="fixed bottom-0 w-full z-20 bg-[#030106]/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
+            <div class="flex justify-between items-center gap-4 px-4 sm:px-12 py-4 sm:py-5 w-full max-w-6xl mx-auto">
+                <a href="https://dakagency.net" class="text-on-surface-variant/50 hover:text-on-surface-variant text-[10px] uppercase tracking-widest transition-colors hidden sm:block">dakagency.net</a>
+                <div class="flex items-center gap-4 ml-auto">
+                    <a href="index.html" id="agendar-btn-cancel" class="text-on-surface-variant hover:text-white px-4 sm:px-6 py-2 font-light text-sm uppercase tracking-widest transition-all active:scale-[0.98]">
+                        Cancelar
+                    </a>
+                    <button type="button" id="agendar-btn-confirmar" class="bg-primary-dim text-white rounded-lg px-6 sm:px-8 py-3 font-bold text-xs sm:text-sm uppercase tracking-widest shadow-[0_8px_32px_rgba(176,36,255,0.28)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                        Confirmar reunión
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/agendar.js?v=1"></script>
+</body>
+</html>
