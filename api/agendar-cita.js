@@ -38,6 +38,7 @@ function sanitize(str, maxLen = 200) {
 const ALLOWED_ORIGINS = [
     'https://dak-calculator.vercel.app',
     'https://calculadora.dakagency.net',
+    'https://plan.dakagency.net',
     'http://localhost:3000',
     'http://127.0.0.1:5500',
 ];
