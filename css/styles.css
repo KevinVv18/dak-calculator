@@ -440,15 +440,6 @@ input.stepper-input[type="number"] {
     pointer-events: none;
 }
 
-/* Desktop: always expanded, override collapse */
-@media (min-width: 1024px) {
-    .cat-body--collapsed {
-        max-height: 2000px;
-        opacity: 1;
-        pointer-events: auto;
-    }
-}
-
 /* ── Extras Item (sidebar) ── */
 .extra-item {
     display: flex;

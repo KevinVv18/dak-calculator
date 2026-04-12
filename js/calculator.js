@@ -188,17 +188,16 @@ function renderServicios() {
     CATEGORIAS.forEach(cat => {
         const section = document.createElement('section');
 
-        // Section header with +/- toggle for mobile
+        // Section header with +/- toggle
         const icon = CAT_ICONS[cat.id] || 'category';
         const showToggle = cat.id !== 'personalizado' && cat.servicios;
-        const startOpen = !isMobile; // desktop always open, mobile starts collapsed
 
         let headerHTML = `
             <div class="cat-header flex items-center gap-3 mb-5${showToggle ? ' cursor-pointer select-none' : ''}" ${showToggle ? `data-cat-toggle="${cat.id}"` : ''}>
                 <span class="material-symbols-outlined text-secondary text-2xl">${icon}</span>
                 <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex-1">${sanitizeHTML(cat.label.replace(/^[\p{Emoji}\s]+/u, ''))}</h2>
                 ${cat.badge ? `<span class="cat-section-badge">${sanitizeHTML(cat.badge)}</span>` : ''}
-                ${showToggle ? `<span class="cat-toggle-icon material-symbols-outlined text-on-surface-variant text-xl lg:hidden transition-transform">${startOpen ? 'remove' : 'add'}</span>` : ''}
+                ${showToggle ? `<span class="cat-toggle-icon material-symbols-outlined text-on-surface-variant text-xl transition-transform">add</span>` : ''}
             </div>`;
 
         if (cat.id === 'personalizado') {
@@ -207,16 +206,15 @@ function renderServicios() {
             const cards = cat.servicios.map(s =>
                 s.tipo === 'nivel' ? renderCardNivel(s) : renderCardFijo(s)
             ).join('');
-            section.innerHTML = headerHTML + `<div class="cat-body${startOpen ? '' : ' cat-body--collapsed'}" id="cat-body-${cat.id}"><div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div></div>`;
+            section.innerHTML = headerHTML + `<div class="cat-body cat-body--collapsed" id="cat-body-${cat.id}"><div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div></div>`;
         }
 
         container.appendChild(section);
     });
 
-    // Category collapse/expand toggle (mobile only)
+    // Category collapse/expand toggle
     document.querySelectorAll('[data-cat-toggle]').forEach(header => {
         header.addEventListener('click', () => {
-            if (window.innerWidth >= 1024) return; // no-op on desktop
             const catId = header.dataset.catToggle;
             const body = document.getElementById(`cat-body-${catId}`);
             const icon = header.querySelector('.cat-toggle-icon');
