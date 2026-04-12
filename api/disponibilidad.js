@@ -3,9 +3,59 @@ const {
     WORK_START, WORK_END, SLOT_DURATION, DAYS_AHEAD, BLOCKED_DAYS,
 } = require('./_google');
 
+// ── Rate Limiter (in-memory, per-IP) ──
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 30; // max 30 GET requests per minute per IP
+const rateLimitMap = new Map();
+
+function isRateLimited(ip) {
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+        rateLimitMap.set(ip, { windowStart: now, count: 1 });
+        return false;
+    }
+    entry.count++;
+    return entry.count > RATE_LIMIT_MAX;
+}
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of rateLimitMap) {
+        if (now - val.windowStart > RATE_LIMIT_WINDOW_MS) rateLimitMap.delete(key);
+    }
+}, 60 * 1000);
+
+const ALLOWED_ORIGINS = [
+    'https://dak-calculator.vercel.app',
+    'https://calculadora.dakagency.net',
+    'http://localhost:3000',
+    'http://127.0.0.1:5500',
+];
+
 module.exports = async function handler(req, res) {
+    // ── CORS ──
+    const origin = req.headers.origin || '';
+    if (ALLOWED_ORIGINS.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+    // ── Rate Limit ──
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+                   || req.headers['x-real-ip']
+                   || req.socket?.remoteAddress
+                   || 'unknown';
+    if (isRateLimited(clientIp)) {
+        return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta más tarde.' });
+    }
+
+    // Cache for 5 minutes to reduce API abuse
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
 
     try {
         const calendar = getCalendar();

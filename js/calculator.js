@@ -1,21 +1,31 @@
 // ══════════════════════════════════════════
-//  DAK Calculator — lógica principal
+//  DAK Calculator — v7 Redesign
+//  Single-page layout with sticky sidebar
 // ══════════════════════════════════════════
 
-// ── Sanitización HTML para prevenir XSS ──
+// ── Helpers ──
 function sanitizeHTML(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
 }
 
-// ── Validación de email ──
 function validarEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!email || email.length > 254) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+// ── Client-side Anti-Spam ──
+const COOLDOWNS = { email: 0, cita: 0 };
+const COOLDOWN_DURATION = 30000; // 30 seconds between sends
+function isCooldown(key) {
+    if (Date.now() < COOLDOWNS[key]) return true;
+    COOLDOWNS[key] = Date.now() + COOLDOWN_DURATION;
+    return false;
 }
 
 const CONFIG_KEY = 'dak-calculator-config';
-const CONFIG_VERSION = 5; // bumpeá este número al cambiar la estructura del config
+const CONFIG_VERSION = 5;
 
 function getConfig() {
     const defaults = {
@@ -29,15 +39,12 @@ function getConfig() {
         const saved = localStorage.getItem(CONFIG_KEY);
         if (saved) {
             const p = JSON.parse(saved);
-            // Si la versión guardada es diferente, descartamos el cache viejo
             if (p._v !== CONFIG_VERSION) {
                 console.info('[DAK] Config version mismatch — reseteando a defaults.');
                 return defaults;
             }
             return {
                 _v: CONFIG_VERSION,
-                // Merge: defaults como base, encima el valor guardado
-                // Garantiza que nuevas claves siempre existan
                 serviciosBase: { ...defaults.serviciosBase, ...(p.serviciosBase || {}) },
                 preciosFijos: { ...defaults.preciosFijos, ...(p.preciosFijos || {}) },
                 perfilesCliente: { ...defaults.perfilesCliente, ...(p.perfilesCliente || {}) },
@@ -50,40 +57,22 @@ function getConfig() {
 
 const CONFIG = getConfig();
 
-// ── Helpers ──
 const NIVELES = ['basico', 'avanzado'];
 const NIVELES_LABEL = { basico: 'Básico', avanzado: 'Avanzado' };
 const PERFIL_LABEL = { bajo: 'Inicial', medio: 'Crecimiento', alto: 'Corporativo' };
-const TAG_FIJO = {
-    'foto-tematica': 'Fotografía',
-    'fotos-eventos': 'Fotografía',
-    'tarjetas': 'Diseño',
-    'banner': 'Diseño',
-    'volantes': 'Diseño',
-    'diptico': 'Diseño',
-    'triptico': 'Diseño',
-    'portada-fb': 'Diseño',
-    'mockups': 'Diseño',
-    'paneles': 'Diseño',
-    'branding-rebranding': 'Branding',
-    'landing-page': 'Web',
-    'tienda-online': 'E-commerce',
-    'mantenimiento-web': 'Soporte',
-    'ads-meta': 'Publicidad',
-    'ads-facebook': 'Publicidad',
-    'ads-instagram': 'Publicidad',
-    'seo-basico': 'Posicionar',
-    'seo-avanzado': 'Posicionar',
-    'sem-campana': 'Campaña',
-    'email-marketing': 'Automación',
-    'auto-redes': 'Automación',
-    'dashboard-reportes': 'Analítica',
-};
 const fmt = n => 'S/ ' + new Intl.NumberFormat('es-PE').format(Math.round(n));
 
-// Items personalizados (en memoria)
+// Category icons (Material Symbols)
+const CAT_ICONS = {
+    'video-foto': 'videocam',
+    'diseno': 'palette',
+    'web': 'language',
+    'marketing': 'ads_click',
+    'automatizacion': 'smart_toy',
+    'personalizado': 'edit_note',
+};
+
 let itemsPersonalizados = [];
-let stepActual = 1;
 let isAdmin = sessionStorage.getItem('dak-admin') === 'true';
 
 // ══════════════════════════════════════════
@@ -94,52 +83,39 @@ function actualizarVistaAdmin() {
     isAdmin = sessionStorage.getItem('dak-admin') === 'true';
     const btnAdmin = document.getElementById('btn-admin-login');
     const btnAjustes = document.getElementById('btn-ajustes');
+    const btnLogout = document.getElementById('btn-logout');
     const lockIcon = document.getElementById('icon-lock-aprox');
     const tooltip = document.getElementById('tooltip-aprox');
-    const step1 = document.getElementById('step-1');
-    const wizardStep1 = document.querySelector('.wizard-step[data-step="1"]');
-    const line12 = document.getElementById('line-1-2');
-
-    const btnLogout = document.getElementById('btn-logout');
-
-    const perfilSection = document.querySelector('.perfil-cards');
-    const perfilHint = document.getElementById('perfil-hint');
-    const perfilLabel = perfilSection?.closest('.field-group')?.querySelector('label');
+    const perfilSection = document.getElementById('perfil-section');
+    const rowPerfil = document.getElementById('row-perfil');
 
     if (isAdmin) {
         if (btnAdmin) btnAdmin.style.display = 'none';
         if (btnAjustes) btnAjustes.style.display = 'flex';
         if (btnLogout) btnLogout.style.display = 'flex';
         if (lockIcon) lockIcon.style.display = 'none';
-        if (tooltip) tooltip.style.display = 'none';
-        // Admin sees step 1 with perfil
-        if (wizardStep1) wizardStep1.style.display = '';
-        if (line12) line12.style.display = '';
+        if (tooltip) tooltip.classList.add('hidden');
         if (perfilSection) perfilSection.style.display = '';
-        if (perfilHint) perfilHint.style.display = '';
-        if (perfilLabel) perfilLabel.style.display = '';
+        if (rowPerfil) rowPerfil.style.display = '';
         cerrarModalLoginAdmin();
     } else {
         if (btnAdmin) btnAdmin.style.display = 'flex';
         if (btnAjustes) btnAjustes.style.display = 'none';
         if (btnLogout) btnLogout.style.display = 'none';
-        if (lockIcon) lockIcon.style.display = 'inline-block';
-        if (tooltip) tooltip.style.display = '';
-        // Non-admin: show step 1 but hide perfil section
-        if (wizardStep1) wizardStep1.style.display = '';
-        if (line12) line12.style.display = '';
+        if (lockIcon) lockIcon.style.display = 'inline';
+        if (tooltip) tooltip.classList.remove('hidden');
         if (perfilSection) perfilSection.style.display = 'none';
-        if (perfilHint) perfilHint.style.display = 'none';
-        if (perfilLabel) perfilLabel.style.display = 'none';
+        if (rowPerfil) rowPerfil.style.display = 'none';
         document.getElementById('perfil-cliente').value = 'bajo';
     }
+    actualizarSidebar();
 }
 
 function abrirModalLoginAdmin() {
     const modal = document.getElementById('modal-login-admin');
     if (!modal) return;
     modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('modal-ajustes--abierto');
+    modal.classList.add('modal-open');
     document.getElementById('admin-user').value = '';
     document.getElementById('admin-pass').value = '';
     document.getElementById('admin-login-error').style.display = 'none';
@@ -150,7 +126,7 @@ function cerrarModalLoginAdmin() {
     const modal = document.getElementById('modal-login-admin');
     if (modal) {
         modal.setAttribute('aria-hidden', 'true');
-        modal.classList.remove('modal-ajustes--abierto');
+        modal.classList.remove('modal-open');
     }
 }
 
@@ -164,7 +140,6 @@ function procesarLoginAdmin() {
     const user = document.getElementById('admin-user').value.trim();
     const pass = document.getElementById('admin-pass').value.trim();
     const errEl = document.getElementById('admin-login-error');
-    
     if (typeof ADMIN_CREDENTIALS !== 'undefined' && user === ADMIN_CREDENTIALS.user && pass === ADMIN_CREDENTIALS.pass) {
         sessionStorage.setItem('dak-admin', 'true');
         errEl.style.display = 'none';
@@ -177,189 +152,210 @@ function procesarLoginAdmin() {
 function mostrarErrorToast(mensaje) {
     const tooltip = document.getElementById('tooltip-aprox');
     if (!tooltip) return;
-
-    // Update text to error message
     tooltip.dataset.originalText = tooltip.dataset.originalText || tooltip.textContent;
     tooltip.textContent = mensaje;
-
-    // Force visible + error state
-    tooltip.classList.remove('tooltip-error');
+    tooltip.classList.remove('hidden', 'tooltip-error');
     void tooltip.offsetWidth;
     tooltip.classList.add('tooltip-error');
-
-    // Force show (in case not hovering)
-    tooltip.style.opacity = '1';
-    tooltip.style.visibility = 'visible';
-    tooltip.style.transform = 'translateY(0)';
-
     setTimeout(() => {
         tooltip.classList.remove('tooltip-error');
         tooltip.textContent = tooltip.dataset.originalText;
-        // Let CSS hover handle visibility again
-        tooltip.style.opacity = '';
-        tooltip.style.visibility = '';
-        tooltip.style.transform = '';
     }, 2500);
 }
 
 // ══════════════════════════════════════════
-//  WIZARD — Navegación entre pasos
-// ══════════════════════════════════════════
-
-function irAStep(n) {
-    document.getElementById(`step-${stepActual}`).classList.add('hidden');
-    document.getElementById(`step-${n}`).classList.remove('hidden');
-
-    document.querySelectorAll('.wizard-step').forEach(el => {
-        const sn = parseInt(el.dataset.step);
-        el.classList.toggle('activo', sn === n);
-        el.classList.toggle('completado', sn < n);
-    });
-    document.getElementById('line-1-2').classList.toggle('completada', n > 1);
-    document.getElementById('line-2-3').classList.toggle('completada', n > 2);
-
-    const btnAnt = document.getElementById('btn-anterior');
-    const btnSig = document.getElementById('btn-siguiente');
-    btnAnt.classList.toggle('hidden', n <= 1);
-    btnSig.classList.toggle('hidden', n === 3);
-
-    stepActual = n;
-    if (n > maxStepAlcanzado) maxStepAlcanzado = n;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function irAlSiguiente() {
-    if (stepActual === 1) {
-        if (!validarStep1()) return;
-        irAStep(2);
-    } else if (stepActual === 2) {
-        renderResumen();
-        irAStep(3);
-    }
-}
-
-function irAlAnterior() {
-    if (stepActual > 1) irAStep(stepActual - 1);
-}
-
-function validarStep1() {
-    if (!isAdmin) return true; // Non-admin: perfil hidden, always pass
-    const perfil = document.getElementById('perfil-cliente').value;
-    if (!perfil) {
-        document.getElementById('perfil-hint').classList.remove('oculto');
-        document.getElementById('perfil-hint').style.color = '#fc8181';
-        return false;
-    }
-    return true;
-}
-
-// ══════════════════════════════════════════
-//  STEP 1 — Perfil
+//  PERFIL SELECTION
 // ══════════════════════════════════════════
 
 function seleccionarPerfil(perfil) {
     document.getElementById('perfil-cliente').value = perfil;
-    document.querySelectorAll('.perfil-card').forEach(c =>
-        c.classList.toggle('perfil-card--activo', c.dataset.perfil === perfil)
+    document.querySelectorAll('.perfil-btn').forEach(b =>
+        b.classList.toggle('perfil-btn--activo', b.dataset.perfil === perfil)
     );
-    const hint = document.getElementById('perfil-hint');
-    hint.classList.add('oculto');
-    hint.style.color = '';
-    actualizarFlotante();
+    actualizarSidebar();
 }
 
 // ══════════════════════════════════════════
-//  STEP 2 — Renderizado dinámico
+//  RENDER SERVICES (replaces wizard Step 2)
 // ══════════════════════════════════════════
 
-function renderStep2() {
-    const tabsEl = document.getElementById('cat-tabs');
-    const panelsEl = document.getElementById('cat-panels');
-    tabsEl.innerHTML = '';
-    panelsEl.innerHTML = '';
+function renderServicios() {
+    const container = document.getElementById('servicios-container');
+    container.innerHTML = '';
 
-    CATEGORIAS.forEach((cat, idx) => {
-        // Tab
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'cat-tab' + (idx === 0 ? ' activo' : '');
-        tab.dataset.cat = cat.id;
-        if (cat.badge) {
-            tab.innerHTML = `${sanitizeHTML(cat.label)} <span class="badge-nuevo">${sanitizeHTML(cat.badge)}</span>`;
-        } else {
-            tab.textContent = cat.label;
-        }
-        tab.addEventListener('click', () => cambiarTab(cat.id));
-        tabsEl.appendChild(tab);
+    CATEGORIAS.forEach(cat => {
+        const section = document.createElement('section');
 
-        // Panel
-        const panel = document.createElement('div');
-        panel.id = `panel-${cat.id}`;
-        panel.className = 'cat-panel' + (idx !== 0 ? ' hidden' : '');
+        // Section header
+        const icon = CAT_ICONS[cat.id] || 'category';
+        let headerHTML = `
+            <div class="flex items-center gap-3 mb-5">
+                <span class="material-symbols-outlined text-secondary text-2xl">${icon}</span>
+                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white">${sanitizeHTML(cat.label.replace(/^[\p{Emoji}\s]+/u, ''))}</h2>
+                ${cat.badge ? `<span class="cat-section-badge">${sanitizeHTML(cat.badge)}</span>` : ''}
+            </div>`;
 
         if (cat.id === 'personalizado') {
-            panel.innerHTML = renderPanelPersonalizado();
-        } else {
-            panel.innerHTML = `<div class="services-grid">${cat.servicios.map(s =>
+            section.innerHTML = headerHTML + renderPanelPersonalizado();
+        } else if (cat.servicios) {
+            const cards = cat.servicios.map(s =>
                 s.tipo === 'nivel' ? renderCardNivel(s) : renderCardFijo(s)
-            ).join('')
-                }</div>`;
+            ).join('');
+            section.innerHTML = headerHTML + `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
         }
-        panelsEl.appendChild(panel);
+
+        container.appendChild(section);
     });
 
-    // Listeners checkboxes de servicios
+    // Attach event listeners
+    attachServiceListeners();
+    attachCustomListeners();
+
+    // Info tooltips
+    setupInfoTooltips();
+}
+
+function renderCardNivel(s) {
+    const precios = CONFIG.serviciosBase[s.key] ?? {};
+    const desde = precios.basico ?? 0;
+    const labels = s.tierLabels || {};
+    const nivelBtns = NIVELES.map(n => `
+        <button type="button" class="nivel-btn${n === 'basico' ? ' activo' : ''}" data-nivel="${n}">
+            <span class="nivel-btn-name">${labels[n] || NIVELES_LABEL[n]}</span>
+            <span class="nivel-btn-price">${fmt(precios[n] ?? 0)}</span>
+        </button>`).join('');
+
+    return `
+    <div class="svc-card" id="card-${s.key}" data-key="${s.key}">
+        <div class="svc-card-header">
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+                <input type="checkbox" id="chk-${s.key}" class="svc-checkbox" tabindex="-1">
+                <div class="min-w-0">
+                    <span class="text-sm font-semibold text-on-surface svc-card-name">${sanitizeHTML(s.label)} ${renderInfoIcon(s.key)}</span>
+                    <span class="text-[11px] text-on-surface-variant block mt-0.5">desde ${fmt(desde)} / ${s.unidad || 'unidad'}</span>
+                </div>
+            </div>
+            <span class="text-xs font-bold text-secondary whitespace-nowrap">${fmt(precios.basico ?? 0)} - ${fmt(precios.avanzado ?? 0)}</span>
+        </div>
+        <div class="svc-card-body" id="body-${s.key}">
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Cantidad</span>
+                    <div class="stepper">
+                        <button type="button" class="stepper-btn stepper-minus" data-target="qty-${s.key}">−</button>
+                        <input type="number" class="stepper-input !bg-transparent !text-white !border-none !shadow-none !ring-0 focus:!ring-0" id="disp-${s.key}" value="1" min="1">
+                        <button type="button" class="stepper-btn stepper-plus" data-target="qty-${s.key}">+</button>
+                    </div>
+                    <input type="hidden" id="qty-${s.key}" value="1">
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold block mb-2">Tipo</span>
+                    <div class="nivel-seg" id="seg-${s.key}" data-key="${s.key}">${nivelBtns}</div>
+                    <input type="hidden" id="lvl-${s.key}" value="basico">
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderCardFijo(s) {
+    const precio = CONFIG.preciosFijos[s.key]?.precio ?? 0;
+    return `
+    <div class="svc-card" id="card-${s.key}" data-key="${s.key}">
+        <div class="svc-card-header">
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+                <input type="checkbox" id="chk-${s.key}" class="svc-checkbox" tabindex="-1">
+                <span class="text-sm font-semibold text-on-surface svc-card-name">${sanitizeHTML(s.label)} ${renderInfoIcon(s.key)}</span>
+            </div>
+            <span class="text-xs font-bold text-secondary whitespace-nowrap">${fmt(precio)}</span>
+        </div>
+    </div>`;
+}
+
+function renderInfoIcon(key) {
+    if (!SERVICE_INFO[key]) return '';
+    return `<span class="svc-info-wrap"><span class="svc-info-icon">ⓘ</span></span>`;
+}
+
+function renderPanelPersonalizado() {
+    return `
+    <div class="svc-card" style="cursor:default">
+        <p class="text-xs text-on-surface-variant mb-4">Agregá cualquier servicio específico para este cliente.</p>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant mb-1 block">Nombre del servicio</label>
+                <input type="text" id="custom-nombre" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="Ej. Retoque especial" maxlength="100">
+            </div>
+            <div class="w-full sm:w-28">
+                <label class="text-[10px] uppercase font-bold text-on-surface-variant mb-1 block">Precio (S/)</label>
+                <input type="number" id="custom-precio" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="0" min="0">
+            </div>
+            <div class="flex items-end">
+                <button type="button" id="btn-add-custom" class="w-full sm:w-auto px-5 py-2.5 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant hover:text-white hover:border-primary-dim/50 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1.5">
+                    <span class="material-symbols-outlined text-sm">add</span> Agregar
+                </button>
+            </div>
+        </div>
+        <ul class="custom-items-list" id="custom-items-list">
+            <li class="custom-empty">Ningún ítem agregado aún.</li>
+        </ul>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+//  EVENT LISTENERS
+// ══════════════════════════════════════════
+
+function attachServiceListeners() {
     CATEGORIAS.forEach(cat => {
         if (cat.id === 'personalizado' || !cat.servicios) return;
         cat.servicios.forEach(s => {
             const chk = document.getElementById(`chk-${s.key}`);
             if (!chk) return;
 
-            // Helper: toggle card state
             const toggleCard = () => {
                 const card = document.getElementById(`card-${s.key}`);
                 const body = document.getElementById(`body-${s.key}`);
                 card?.classList.toggle('activo', chk.checked);
                 body?.classList.toggle('visible', chk.checked);
                 if (!chk.checked && s.tipo === 'nivel') {
-                    // Reset stepper
                     const disp = document.getElementById(`disp-${s.key}`);
                     const qty = document.getElementById(`qty-${s.key}`);
                     if (disp) disp.value = '1';
                     if (qty) qty.value = '1';
                 }
-                actualizarFlotante();
+                actualizarSidebar();
             };
 
             chk.addEventListener('change', toggleCard);
 
-            // Click anywhere on the card toggles it
             const card = document.getElementById(`card-${s.key}`);
             card?.addEventListener('click', e => {
-                // Don't toggle when clicking inside the body (steppers, nivel buttons, etc.)
                 if (e.target.closest('.svc-card-body')) return;
+                if (e.target.closest('.svc-info-wrap')) return;
                 chk.checked = !chk.checked;
                 toggleCard();
             });
         });
     });
 
-    // Event delegation: stepper y nivel-seg
-    document.getElementById('cat-panels').addEventListener('click', e => {
-        // Stepper
+    // Event delegation for steppers and nivel buttons
+    const container = document.getElementById('servicios-container');
+    container.addEventListener('click', e => {
         const stepperBtn = e.target.closest('.stepper-btn');
         if (stepperBtn) {
             const hidden = document.getElementById(stepperBtn.dataset.target);
-            const disp = document.getElementById(stepperBtn.dataset.target.replace('qty-', 'disp-'));
+            const key = stepperBtn.dataset.target.replace('qty-', '');
+            const disp = document.getElementById(`disp-${key}`);
             if (!hidden) return;
             let val = parseInt(hidden.value) || 1;
             val = stepperBtn.classList.contains('stepper-plus') ? val + 1 : Math.max(1, val - 1);
             hidden.value = val;
             if (disp) disp.value = val;
-            actualizarFlotante();
+            actualizarSidebar();
             return;
         }
-        // Nivel segmentado
+
         const nivelBtn = e.target.closest('.nivel-btn');
         if (nivelBtn) {
             const seg = nivelBtn.closest('.nivel-seg');
@@ -367,27 +363,24 @@ function renderStep2() {
             seg.querySelectorAll('.nivel-btn').forEach(b => b.classList.remove('activo'));
             nivelBtn.classList.add('activo');
             const hidden = document.getElementById(`lvl-${seg.dataset.key}`);
-            if (hidden) { hidden.value = nivelBtn.dataset.nivel; actualizarFlotante(); }
+            if (hidden) { hidden.value = nivelBtn.dataset.nivel; actualizarSidebar(); }
         }
     });
 
-    // Escuchar input manual en los steppers de Step 2
-    document.getElementById('cat-panels').addEventListener('input', e => {
+    // Manual stepper input
+    container.addEventListener('input', e => {
         if (e.target.classList.contains('stepper-input')) {
             const val = parseInt(e.target.value);
             const key = e.target.id.replace('disp-', '');
             const hidden = document.getElementById(`qty-${key}`);
-            if (hidden) {
-                if (!isNaN(val) && val > 0) {
-                    hidden.value = val;
-                }
-                actualizarFlotante(); // Actualizamos totales aunque esté vacío temporalmente
+            if (hidden && !isNaN(val) && val > 0) {
+                hidden.value = val;
             }
+            actualizarSidebar();
         }
     });
-    
-    // Corregir valores vacíos o inválidos al perder el foco en Step 2
-    document.getElementById('cat-panels').addEventListener('focusout', e => {
+
+    container.addEventListener('focusout', e => {
         if (e.target.classList.contains('stepper-input')) {
             let val = parseInt(e.target.value);
             if (isNaN(val) || val < 1) val = 1;
@@ -395,11 +388,20 @@ function renderStep2() {
             const key = e.target.id.replace('disp-', '');
             const hidden = document.getElementById(`qty-${key}`);
             if (hidden) hidden.value = val;
-            actualizarFlotante();
+            actualizarSidebar();
         }
     });
+}
 
-    // Info tooltips: move all tips to body to escape overflow:hidden / backdrop-filter stacking
+function attachCustomListeners() {
+    document.getElementById('btn-add-custom')?.addEventListener('click', agregarItemPersonalizado);
+    // Allow Enter key to add custom item
+    document.getElementById('custom-precio')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') agregarItemPersonalizado();
+    });
+}
+
+function setupInfoTooltips() {
     const globalTip = document.createElement('div');
     globalTip.className = 'svc-info-tip';
     globalTip.style.display = 'none';
@@ -407,7 +409,7 @@ function renderStep2() {
 
     document.querySelectorAll('.svc-info-wrap').forEach(wrap => {
         wrap.addEventListener('mouseenter', () => {
-            const key = wrap.closest('.svc-card')?.id?.replace('card-', '');
+            const key = wrap.closest('.svc-card')?.dataset.key;
             const desc = SERVICE_INFO[key];
             if (!desc) return;
             globalTip.innerHTML = sanitizeHTML(desc).replace(/\n/g, '<br>');
@@ -433,134 +435,41 @@ function renderStep2() {
             globalTip.style.display = 'none';
         });
     });
-
-    // Personalizado
-    document.getElementById('btn-add-custom')?.addEventListener('click', agregarItemPersonalizado);
-
-    renderExtras();
-
-    // Extras toggle (collapsible)
-    document.getElementById('extras-toggle')?.addEventListener('click', () => {
-        document.getElementById('extras-card')?.classList.toggle('expandido');
-    });
 }
 
-function renderInfoIcon(key) {
-    const desc = SERVICE_INFO[key];
-    if (!desc) return '';
-    return `<span class="svc-info-wrap">
-        <span class="svc-info-icon">ⓘ</span>
-    </span>`;
-}
-
-function renderCardNivel(s) {
-    const desde = CONFIG.serviciosBase[s.key]?.basico ?? 0;
-    const precios = CONFIG.serviciosBase[s.key] ?? {};
-    const labels = s.tierLabels || {};
-    const nivelBtns = NIVELES.map(n => `
-        <button type="button" class="nivel-btn${n === 'basico' ? ' activo' : ''}" data-nivel="${n}">
-            <span class="nivel-btn-name">${labels[n] || NIVELES_LABEL[n]}</span>
-            <span class="nivel-btn-price">${fmt(precios[n] ?? 0)}</span>
-        </button>`).join('');
-    return `
-    <div class="svc-card" id="card-${s.key}">
-        <div class="svc-card-header">
-            <input type="checkbox" id="chk-${s.key}" style="flex-shrink:0;width:17px;height:17px;accent-color:var(--color-secondary);pointer-events:none">
-            <div class="svc-card-info">
-                <span class="svc-card-label">${s.label}${renderInfoIcon(s.key)}</span>
-                <span class="svc-card-price">desde ${fmt(desde)} / ${s.unidad || 'unidad'}</span>
-            </div>
-        </div>
-        <div class="svc-card-body" id="body-${s.key}">
-            <div class="svc-field">
-                <label>Cantidad</label>
-                <div class="stepper">
-                    <button type="button" class="stepper-btn stepper-minus" data-target="qty-${s.key}">&#8722;</button>
-                    <input type="number" class="stepper-input stepper-display" id="disp-${s.key}" value="1" min="1">
-                    <button type="button" class="stepper-btn stepper-plus" data-target="qty-${s.key}">&#43;</button>
-                </div>
-                <input type="hidden" id="qty-${s.key}" value="1">
-            </div>
-            <div class="svc-field">
-                <label>Tipo</label>
-                <div class="nivel-seg" id="seg-${s.key}" data-key="${s.key}">${nivelBtns}</div>
-                <input type="hidden" id="lvl-${s.key}" value="basico">
-            </div>
-        </div>
-    </div>`;
-}
-
-function renderCardFijo(s) {
-    const precio = CONFIG.preciosFijos[s.key]?.precio ?? '?';
-    return `
-    <div class="svc-card" id="card-${s.key}">
-        <div class="svc-card-header">
-            <input type="checkbox" id="chk-${s.key}" aria-label="${s.label}">
-            <div class="svc-card-info">
-                <span class="svc-card-label">${s.label}${renderInfoIcon(s.key)}</span>
-                <span class="svc-card-price">${fmt(precio)}</span>
-            </div>
-        </div>
-    </div>`;
-}
-
-function renderPanelPersonalizado() {
-    return `
-    <div class="personalizado-panel">
-        <p style="font-size:13px;color:#8a99b0;margin-bottom:16px">
-            Agregá cualquier servicio específico para este cliente.
-        </p>
-        <div class="personalizado-form">
-            <input type="text" id="custom-nombre" class="text-input" placeholder="Nombre del servicio">
-            <input type="number" id="custom-precio" class="number-input" placeholder="Precio" min="0">
-            <button type="button" id="btn-add-custom" class="btn-add">+ Agregar</button>
-        </div>
-        <ul class="custom-items-list" id="custom-items-list">
-            <li class="custom-empty">Ningún ítem agregado aún.</li>
-        </ul>
-    </div>`;
-}
-
-function cambiarTab(catId) {
-    document.querySelectorAll('.cat-tab').forEach(t =>
-        t.classList.toggle('activo', t.dataset.cat === catId)
-    );
-    document.querySelectorAll('.cat-panel').forEach(p =>
-        p.classList.toggle('hidden', p.id !== `panel-${catId}`)
-    );
-}
+// ══════════════════════════════════════════
+//  EXTRAS (in sidebar)
+// ══════════════════════════════════════════
 
 function renderExtras() {
     const grid = document.getElementById('extras-grid');
     if (!grid) return;
     grid.innerHTML = Object.entries(CONFIG.factoresExtra).map(([key, obj]) => `
         <label class="extra-item" id="extra-label-${key}">
-            <input type="checkbox" id="extra-${key}" data-key="${key}">
-            <div class="extra-item-info">
-                <span class="extra-item-label">${obj.nombre}</span>
-                <span class="extra-item-precio">${fmt(obj.precio)}</span>
+            <div class="flex items-center gap-2.5">
+                <input type="checkbox" id="extra-${key}" data-key="${key}" class="w-4 h-4 rounded border-outline-variant bg-transparent text-primary-dim focus:ring-primary-dim accent-[#b023ff] cursor-pointer">
+                <span class="text-xs text-on-surface">${sanitizeHTML(obj.nombre)}</span>
             </div>
+            <span class="text-xs font-semibold text-on-surface-variant">+ ${fmt(obj.precio)}</span>
         </label>
     `).join('');
 
     grid.querySelectorAll('input[type="checkbox"]').forEach(chk => {
         chk.addEventListener('change', () => {
-            document.getElementById(`extra-label-${chk.dataset.key}`)
-                ?.classList.toggle('activo', chk.checked);
-            actualizarFlotante();
+            document.getElementById(`extra-label-${chk.dataset.key}`)?.classList.toggle('activo', chk.checked);
+            actualizarSidebar();
         });
     });
 }
 
 // ══════════════════════════════════════════
-//  CÁLCULO
+//  CALCULATION
 // ══════════════════════════════════════════
 
 function calcularTotal() {
     const perfil = document.getElementById('perfil-cliente').value || 'bajo';
     let subtotalBase = 0;
 
-    // Servicios con nivel / fijo desde categorías
     CATEGORIAS.forEach(cat => {
         if (cat.id === 'personalizado' || !cat.servicios) return;
         cat.servicios.forEach(s => {
@@ -576,7 +485,6 @@ function calcularTotal() {
         });
     });
 
-    // Items personalizados
     itemsPersonalizados.forEach(i => (subtotalBase += i.precio));
 
     const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
@@ -594,218 +502,141 @@ function calcularTotal() {
     return { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal: subtotalMult + extrasTotal };
 }
 
-function actualizarFlotante() {
-    const { totalFinal } = calcularTotal();
-    const el = document.getElementById('flotante-valor');
-    if (el) el.textContent = fmt(totalFinal);
-}
-
 // ══════════════════════════════════════════
-//  STEP 3 — Resumen
+//  SIDEBAR UPDATE (replaces wizard Step 3)
 // ══════════════════════════════════════════
 
-function renderResumen() {
-    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal } = calcularTotal();
-    const nombre = sanitizeHTML(document.getElementById('nombre-cliente').value.trim());
+function actualizarSidebar() {
+    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, totalFinal } = calcularTotal();
     const perfilLabel = PERFIL_LABEL[perfil] || perfil;
 
-    let filas = [];
+    // Collect selected items
+    let items = [];
     CATEGORIAS.forEach(cat => {
         if (cat.id === 'personalizado' || !cat.servicios) return;
         cat.servicios.forEach(s => {
             const chk = document.getElementById(`chk-${s.key}`);
             if (!chk?.checked) return;
             if (s.tipo === 'nivel') {
-                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
+                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 1;
                 const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
                 const precioUnit = CONFIG.serviciosBase[s.key]?.[lvl] ?? 0;
-                const subtotal = qty * precioUnit;
                 const tierLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
-                if (subtotal > 0) filas.push({ cat: cat.label, nombre: s.label, key: s.key, tipo: 'nivel', qty, lvl, tierLabel, precioUnit, subtotal });
+                items.push({ key: s.key, nombre: s.label, tipo: 'nivel', qty, tierLabel, subtotal: qty * precioUnit });
             } else if (s.tipo === 'fijo') {
                 const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
-                filas.push({ cat: cat.label, nombre: s.label, key: s.key, tipo: 'fijo', subtotal: p });
+                items.push({ key: s.key, nombre: s.label, tipo: 'fijo', subtotal: p });
             }
         });
     });
     itemsPersonalizados.forEach(i =>
-        filas.push({ cat: '⚙️ Personalizado', nombre: i.nombre, key: `custom-${i.id}`, tipo: 'custom', customId: i.id, subtotal: i.precio })
+        items.push({ key: `custom-${i.id}`, nombre: i.nombre, tipo: 'custom', customId: i.id, subtotal: i.precio })
     );
 
-    const tablaFilas = filas.length
-        ? filas.map(f => {
-            // Detalle column: mini-stepper for nivel, text for others
-            let detalleHtml;
-            if (f.tipo === 'nivel') {
-                detalleHtml = `
-                    <div class="resumen-stepper">
-                        <button type="button" class="resumen-stepper-btn" data-action="minus" data-key="${f.key}">−</button>
-                        <input type="number" class="resumen-stepper-input" id="rqty-${f.key}" data-key="${f.key}" value="${f.qty}" min="1">
-                        <button type="button" class="resumen-stepper-btn" data-action="plus" data-key="${f.key}">+</button>
-                        <span class="resumen-stepper-level">× ${f.tierLabel}</span>
-                    </div>`;
-            } else if (f.tipo === 'fijo') {
-                const tagLabel = TAG_FIJO[f.key] || 'Fijo';
-                detalleHtml = `<span class="resumen-tag-fijo">${tagLabel}</span>`;
-            } else {
-                detalleHtml = `<span class="resumen-tag-custom">Personalizado</span>`;
-            }
+    // Render items
+    const itemsEl = document.getElementById('sidebar-items');
+    const emptyEl = document.getElementById('sidebar-empty');
 
-            // Delete key
-            const deleteAttr = f.tipo === 'custom'
-                ? `data-delete-custom="${f.customId}"`
-                : `data-delete-svc="${f.key}"`;
+    if (items.length === 0) {
+        if (emptyEl) emptyEl.style.display = '';
+        // Remove any existing item rows
+        itemsEl.querySelectorAll('.sidebar-item').forEach(el => el.remove());
+    } else {
+        if (emptyEl) emptyEl.style.display = 'none';
+        let html = items.map(item => {
+            let detail = '';
+            if (item.tipo === 'nivel') detail = `${item.tierLabel} ×${item.qty}`;
+            else if (item.tipo === 'fijo') detail = 'Precio fijo';
+            else detail = 'Personalizado';
+
+            const deleteAttr = item.tipo === 'custom'
+                ? `data-delete-custom="${item.customId}"`
+                : `data-delete-svc="${item.key}"`;
 
             return `
-            <tr>
-                <td><span class="tag-cat">${sanitizeHTML(f.cat)}</span><br><span style="margin-top:4px;display:block">${sanitizeHTML(f.nombre)}</span></td>
-                <td>${detalleHtml}</td>
-                <td class="text-right">${fmt(f.subtotal)}</td>
-                <td class="td-action"><button type="button" class="btn-resumen-delete" ${deleteAttr} title="Eliminar">🗑</button></td>
-            </tr>`;
-        }).join('')
-        : `<tr><td colspan="4" class="resumen-empty">Sin servicios seleccionados.</td></tr>`;
+            <div class="sidebar-item">
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-xs font-semibold text-on-surface truncate">${sanitizeHTML(item.nombre)}</h4>
+                    <p class="text-[10px] text-on-surface-variant uppercase">${sanitizeHTML(detail)}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-white whitespace-nowrap">${fmt(item.subtotal)}</span>
+                    <button type="button" class="sidebar-item-delete" ${deleteAttr} title="Eliminar">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+        // Keep the empty placeholder (hidden) + add items
+        itemsEl.innerHTML = `<div class="sidebar-empty flex flex-col items-center justify-center py-6 opacity-30" id="sidebar-empty" style="display:none">
+            <span class="material-symbols-outlined text-4xl mb-2">shopping_cart</span>
+            <p class="text-xs text-center">Seleccioná servicios<br>para comenzar</p>
+        </div>` + html;
 
-    const perfilRow = isAdmin
-        ? `<div class="resumen-fila"><span>× Perfil ${perfilLabel} (${multiplicador}x)</span><span>${fmt(subtotalMult)}</span></div>`
-        : '';
-    const perfilMeta = isAdmin
-        ? `<span>Perfil: <strong>${perfilLabel}</strong> (×${multiplicador})</span>`
-        : '';
-
-    const html = `
-        <div class="resumen-meta">
-            ${nombre ? `<span>Cliente: <strong>${nombre}</strong></span>` : ''}
-            ${perfilMeta}
-        </div>
-        <table class="resumen-tabla">
-            <thead><tr>
-                <th>Servicio</th>
-                <th class="muted">Detalle</th>
-                <th class="text-right">Subtotal</th>
-                <th style="width:40px"></th>
-            </tr></thead>
-            <tbody>${tablaFilas}</tbody>
-        </table>
-        <div class="resumen-calculo">
-            <div class="resumen-fila"><span>Subtotal base</span><span>${fmt(subtotalBase)}</span></div>
-            ${perfilRow}
-            ${extrasActivos.length ? `<div class="resumen-fila"><span>+ Extras (${extrasActivos.map(e => e.nombre).join(', ')})</span><span>${fmt(extrasTotal)}</span></div>` : ''}
-            <div class="resumen-fila total"><span>TOTAL FINAL</span><span>${fmt(totalFinal)}</span></div>
-        </div>`;
-
-    const esAprox = document.getElementById('chk-aprox')?.checked ?? true;
-    const badgeAprox = esAprox
-        ? `<div class="resumen-aprox">⚠️ <strong>Presupuesto aproximado</strong> — Los precios son orientativos y pueden ajustarse antes de oficializarse.</div>`
-        : `<div class="resumen-aprox resumen-aprox--oficial">✅ <strong>Cotización oficial</strong> — Los precios reflejan valores finales.</div>`;
-
-    document.getElementById('resumen-contenido').innerHTML = badgeAprox + html;
-
-    // ── Attach interactive listeners ──
-
-    // Delete service buttons
-    document.querySelectorAll('.btn-resumen-delete[data-delete-svc]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const key = btn.dataset.deleteSvc;
-            const chk = document.getElementById(`chk-${key}`);
-            if (chk) {
-                chk.checked = false;
-                document.getElementById(`card-${key}`)?.classList.remove('activo');
-                document.getElementById(`body-${key}`)?.classList.remove('visible');
-            }
-            actualizarFlotante();
-            renderResumen();
-        });
-    });
-
-    // Delete custom item buttons
-    document.querySelectorAll('.btn-resumen-delete[data-delete-custom]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = parseInt(btn.dataset.deleteCustom);
-            itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
-            renderListaCustom();
-            actualizarFlotante();
-            renderResumen();
-        });
-    });
-
-    // Quantity steppers
-    document.querySelectorAll('.resumen-stepper-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const key = btn.dataset.key;
-            const action = btn.dataset.action;
-            const qtyInput = document.getElementById(`qty-${key}`);
-            const dispStep2 = document.getElementById(`disp-${key}`);
-            if (!qtyInput) return;
-            let val = parseInt(qtyInput.value) || 1;
-            val = action === 'plus' ? val + 1 : Math.max(1, val - 1);
-            qtyInput.value = val;
-            if (dispStep2) dispStep2.value = val;
-            actualizarFlotante();
-            renderResumen();
-        });
-    });
-
-    // Manual input for quantity steppers
-    document.querySelectorAll('.resumen-stepper-input').forEach(inp => {
-        inp.addEventListener('input', e => {
-            const key = e.target.dataset.key;
-            const val = parseInt(e.target.value);
-            const qtyInput = document.getElementById(`qty-${key}`);
-            const dispStep2 = document.getElementById(`disp-${key}`);
-            if (qtyInput) {
-                if (!isNaN(val) && val > 0) {
-                    qtyInput.value = val;
-                    if (dispStep2) dispStep2.value = val;
+        // Attach delete handlers
+        itemsEl.querySelectorAll('.sidebar-item-delete[data-delete-svc]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.deleteSvc;
+                const chk = document.getElementById(`chk-${key}`);
+                if (chk) {
+                    chk.checked = false;
+                    document.getElementById(`card-${key}`)?.classList.remove('activo');
+                    document.getElementById(`body-${key}`)?.classList.remove('visible');
                 }
-                actualizarFlotante();
-            }
+                actualizarSidebar();
+            });
         });
-        
-        inp.addEventListener('focusout', e => {
-            const key = e.target.dataset.key;
-            let val = parseInt(e.target.value);
-            if (isNaN(val) || val < 1) val = 1;
-            e.target.value = val;
-            
-            const qtyInput = document.getElementById(`qty-${key}`);
-            const dispStep2 = document.getElementById(`disp-${key}`);
-            if (qtyInput) {
-                qtyInput.value = val;
-                if (dispStep2) dispStep2.value = val;
-            }
-            actualizarFlotante();
-            renderResumen();
+
+        itemsEl.querySelectorAll('.sidebar-item-delete[data-delete-custom]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.deleteCustom);
+                itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
+                renderListaCustom();
+                actualizarSidebar();
+            });
         });
-    });
+    }
 
+    // Update totals
+    document.getElementById('sidebar-subtotal').textContent = fmt(subtotalBase);
+    document.getElementById('sidebar-extras-total').textContent = fmt(extrasTotal);
+    document.getElementById('sidebar-total').textContent = fmt(totalFinal);
 
-    // Pre-fill email
-    const emailCliente = document.getElementById('email-cliente').value.trim();
-    if (emailCliente) document.getElementById('email-destino').value = emailCliente;
+    // Profile row (admin)
+    const rowPerfil = document.getElementById('row-perfil');
+    if (isAdmin && rowPerfil) {
+        rowPerfil.style.display = '';
+        document.getElementById('label-perfil').textContent = `× ${perfilLabel} (${multiplicador}x)`;
+        document.getElementById('sidebar-perfil-total').textContent = fmt(subtotalMult);
+    }
+
+    // Mobile total
+    const mobileTotal = document.getElementById('mobile-total-value');
+    if (mobileTotal) mobileTotal.textContent = fmt(totalFinal);
 }
 
 // ══════════════════════════════════════════
-//  PERSONALIZADO
+//  PERSONALIZADO (Custom Items)
 // ══════════════════════════════════════════
 
 function agregarItemPersonalizado() {
     const nombreEl = document.getElementById('custom-nombre');
     const precioEl = document.getElementById('custom-precio');
-    const nombre = nombreEl.value.trim().slice(0, 100); // Límite 100 chars
+    const nombre = nombreEl.value.trim().replace(/[<>"'`]/g, '').slice(0, 100);
     const precio = parseFloat(precioEl.value) || 0;
     if (!nombre || precio <= 0 || precio > 999999) return;
+    if (itemsPersonalizados.length >= 20) return; // max 20 custom items
     itemsPersonalizados.push({ id: Date.now(), nombre, precio });
     nombreEl.value = '';
     precioEl.value = '';
     renderListaCustom();
-    actualizarFlotante();
+    actualizarSidebar();
 }
 
 function eliminarItemPersonalizado(id) {
     itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
     renderListaCustom();
-    actualizarFlotante();
+    actualizarSidebar();
 }
 
 function renderListaCustom() {
@@ -816,12 +647,13 @@ function renderListaCustom() {
             <li class="custom-item">
                 <span class="custom-item-nombre">${sanitizeHTML(i.nombre)}</span>
                 <span class="custom-item-precio">${fmt(i.precio)}</span>
-                <button type="button" class="btn-delete" data-custom-id="${i.id}" aria-label="Eliminar">✕</button>
+                <button type="button" class="btn-delete-custom" data-custom-id="${i.id}" aria-label="Eliminar">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                </button>
             </li>`).join('')
         : '<li class="custom-empty">Ningún ítem agregado aún.</li>';
 
-    // Attach delete handlers (avoids inline onclick)
-    list.querySelectorAll('.btn-delete[data-custom-id]').forEach(btn => {
+    list.querySelectorAll('.btn-delete-custom[data-custom-id]').forEach(btn => {
         btn.addEventListener('click', () => eliminarItemPersonalizado(parseInt(btn.dataset.customId)));
     });
 }
@@ -886,27 +718,31 @@ function construirCuerpoEmail() {
 }
 
 function enviarCotizacion() {
-    const emailDestino = document.getElementById('email-destino').value.trim();
-    const mensaje = document.getElementById('email-mensaje').value.trim();
+    const emailDestino = document.getElementById('email-cliente').value.trim();
+    const mensaje = document.getElementById('email-mensaje')?.value.trim() || '';
     const feedback = document.getElementById('email-feedback');
     const nombre = document.getElementById('nombre-cliente').value.trim() || 'cliente';
 
     if (!emailDestino || !validarEmail(emailDestino)) {
         feedback.textContent = !emailDestino
-            ? '⚠️ Ingresá el email del destinatario.'
+            ? '⚠️ Ingresá el email del cliente.'
             : '⚠️ El formato del email no es válido.';
-        feedback.className = 'email-feedback error';
+        feedback.className = 'text-xs text-center error';
+        return;
+    }
+
+    if (isCooldown('email')) {
+        feedback.textContent = '⏳ Esperá unos segundos antes de enviar otra vez.';
+        feedback.className = 'text-xs text-center error';
         return;
     }
 
     const cuerpo = construirCuerpoEmail();
     const total = calcularTotal();
 
-    // Intentar EmailJS si está configurado
-    if (EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.publicKey) {
+    if (typeof EMAILJS_CONFIG !== 'undefined' && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.publicKey) {
         feedback.textContent = 'Enviando...';
-        feedback.className = 'email-feedback';
-        // eslint-disable-next-line no-undef
+        feedback.className = 'text-xs text-center text-on-surface-variant';
         emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
             to_email: emailDestino,
             to_name: nombre,
@@ -916,11 +752,11 @@ function enviarCotizacion() {
         }, EMAILJS_CONFIG.publicKey)
             .then(() => {
                 feedback.textContent = '✅ Cotización enviada con éxito.';
-                feedback.className = 'email-feedback ok';
+                feedback.className = 'text-xs text-center ok';
             })
             .catch(() => {
-                feedback.textContent = '❌ Error al enviar. Verificá la configuración de email.';
-                feedback.className = 'email-feedback error';
+                feedback.textContent = '❌ Error al enviar. Verificá la configuración.';
+                feedback.className = 'text-xs text-center error';
             });
     } else {
         enviarMailto(emailDestino, nombre, cuerpo, mensaje, feedback);
@@ -934,7 +770,7 @@ function enviarMailto(email, nombre, cuerpo, mensaje, feedbackEl) {
     window.location.href = url;
     if (feedbackEl) {
         feedbackEl.textContent = '📬 Se abrió tu cliente de correo.';
-        feedbackEl.className = 'email-feedback ok';
+        feedbackEl.className = 'text-xs text-center ok';
     }
 }
 
@@ -956,14 +792,14 @@ const SERVICIOS_BASE_KEYS = [
 function abrirModalAjustes() {
     const modal = document.getElementById('modal-ajustes');
     modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('modal-ajustes--abierto');
+    modal.classList.add('modal-open');
     rellenarModalAjustes();
 }
 
 function cerrarModalAjustes() {
     const modal = document.getElementById('modal-ajustes');
     modal.setAttribute('aria-hidden', 'true');
-    modal.classList.remove('modal-ajustes--abierto');
+    modal.classList.remove('modal-open');
 }
 
 function rellenarModalAjustes() {
@@ -973,7 +809,7 @@ function rellenarModalAjustes() {
     SERVICIOS_BASE_KEYS.forEach(({ key, label }) => {
         const bloque = document.createElement('div');
         bloque.className = 'ajustes-bloque';
-        bloque.innerHTML = `<strong>${label}</strong>`;
+        bloque.innerHTML = `<strong>${sanitizeHTML(label)}</strong>`;
         const filas = NIVELES.map(n => {
             const id = `adj-sb-${key}-${n}`;
             const val = CONFIG.serviciosBase[key]?.[n] ?? 0;
@@ -991,7 +827,7 @@ function rellenarModalAjustes() {
     pf.innerHTML = '';
     Object.entries(CONFIG.preciosFijos).forEach(([key, obj]) => {
         pf.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-pf-${key}">${obj.nombre}</label>
+            <label for="adj-pf-${key}">${sanitizeHTML(obj.nombre)}</label>
             <input type="number" id="adj-pf-${key}" data-pf="${key}" value="${obj.precio}" min="0">
         </div>`;
     });
@@ -1002,7 +838,7 @@ function rellenarModalAjustes() {
     Object.entries(CONFIG.perfilesCliente).forEach(([key, val]) => {
         const label = PERFIL_LABEL[key] || (key.charAt(0).toUpperCase() + key.slice(1));
         pe.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-pe-${key}">${label}</label>
+            <label for="adj-pe-${key}">${sanitizeHTML(label)}</label>
             <input type="number" step="0.1" id="adj-pe-${key}" data-pe="${key}" value="${val}" min="0">
         </div>`;
     });
@@ -1012,7 +848,7 @@ function rellenarModalAjustes() {
     fe.innerHTML = '';
     Object.entries(CONFIG.factoresExtra).forEach(([key, obj]) => {
         fe.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-fe-${key}">${obj.nombre}</label>
+            <label for="adj-fe-${key}">${sanitizeHTML(obj.nombre)}</label>
             <input type="number" id="adj-fe-${key}" data-fe="${key}" value="${obj.precio}" min="0">
         </div>`;
     });
@@ -1038,10 +874,9 @@ function aplicarAjustes() {
     try { localStorage.setItem(CONFIG_KEY, JSON.stringify(CONFIG)); }
     catch (e) { console.error('[DAK] Error guardando config:', e); }
 
-    // Re-render UI with new prices
-    actualizarFlotante();
-    renderExtras();
     cerrarModalAjustes();
+    // Reload to refresh all prices in UI
+    location.reload();
 }
 
 function resetearDefaults() {
@@ -1051,40 +886,514 @@ function resetearDefaults() {
 }
 
 // ══════════════════════════════════════════
-//  WIZARD STEP CLICK NAVIGATION
+//  INTERACTIVE BACKGROUND
 // ══════════════════════════════════════════
 
-let wizardToastTimer = null;
+const MATH_SYMBOLS = ['π', 'Σ', '∫', '∞', '×', '+', '=', '%', '√', 'Δ', 'θ', 'λ', 'Ω', '÷', '±', '≈', 'φ', 'μ', 'ε', '∂', '∇'];
 
-function mostrarWizardToast(mensaje) {
-    const toast = document.getElementById('wizard-toast');
-    if (!toast) return;
-    toast.textContent = mensaje;
-    toast.classList.remove('visible');
-    void toast.offsetWidth;
-    toast.classList.add('visible');
-    clearTimeout(wizardToastTimer);
-    wizardToastTimer = setTimeout(() => toast.classList.remove('visible'), 2500);
+function initMouseGlow() {
+    const glow = document.getElementById('mouse-glow');
+    if (!glow) return;
+    let raf = null;
+    document.addEventListener('mousemove', e => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+            glow.style.left = e.clientX + 'px';
+            glow.style.top = e.clientY + 'px';
+            if (!glow.classList.contains('active')) glow.classList.add('active');
+        });
+    });
+    document.addEventListener('mouseleave', () => glow.classList.remove('active'));
 }
 
-// Track the highest step the user has reached
-let maxStepAlcanzado = 1;
+function initMathMeteors() {
+    const container = document.getElementById('meteor-container');
+    if (!container) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-function manejarClickWizardStep(targetStep) {
-    if (targetStep === stepActual) return;
+    const MAX_METEORS = 8;
+    let activeMeteors = 0;
 
-    const minStep = isAdmin ? 1 : 2;
-    if (targetStep < minStep) return;
+    const COLOR_VARIANTS = [
+        {
+            cls: 'math-meteor--purple',
+            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.25) 0%, rgba(214,146,255,0.18) 15%, rgba(176,36,255,0.1) 35%, rgba(176,36,255,0.04) 60%, transparent 100%)',
+            coreBright: 'rgba(255, 255, 255, 0.35)',
+            coreMid: 'rgba(176, 36, 255, 0.2)',
+        },
+        {
+            cls: 'math-meteor--cyan',
+            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.2) 0%, rgba(150,255,255,0.15) 15%, rgba(95,248,248,0.08) 35%, rgba(95,248,248,0.03) 60%, transparent 100%)',
+            coreBright: 'rgba(255, 255, 255, 0.3)',
+            coreMid: 'rgba(95, 248, 248, 0.18)',
+        },
+        {
+            cls: 'math-meteor--white',
+            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.3) 0%, rgba(214,146,255,0.12) 20%, rgba(176,36,255,0.05) 50%, transparent 100%)',
+            coreBright: 'rgba(255, 255, 255, 0.4)',
+            coreMid: 'rgba(214, 146, 255, 0.15)',
+        },
+    ];
 
-    // Can navigate to any step already completed (< current) or already visited
-    if (targetStep <= maxStepAlcanzado) {
-        if (targetStep === 3) renderResumen();
-        irAStep(targetStep);
+    function pickColor() {
+        const r = Math.random();
+        if (r < 0.55) return COLOR_VARIANTS[0]; // purple (dominant)
+        if (r < 0.85) return COLOR_VARIANTS[1]; // cyan
+        return COLOR_VARIANTS[2];                // white (rare)
+    }
+
+    function spawnMeteor() {
+        if (activeMeteors >= MAX_METEORS) {
+            setTimeout(spawnMeteor, 1500);
+            return;
+        }
+
+        const symbol = MATH_SYMBOLS[Math.floor(Math.random() * MATH_SYMBOLS.length)];
+        const color = pickColor();
+        const el = document.createElement('span');
+        el.className = `math-meteor ${color.cls}`;
+        el.textContent = symbol;
+
+        // Depth layer: 0 = close/big, 1 = far/small
+        const depth = Math.random();
+        const size = depth < 0.3 ? 24 + Math.random() * 14          // close: 24-38px
+                   : depth < 0.7 ? 16 + Math.random() * 10          // mid:   16-26px
+                   :                10 + Math.random() * 8;          // far:   10-18px
+        el.style.fontSize = size + 'px';
+
+        // Far meteors get blur for depth-of-field
+        const blur = depth > 0.7 ? (0.5 + (depth - 0.7) * 4) : 0;
+        el.style.setProperty('--blur', blur + 'px');
+
+        // Trail: wide cone of fire behind the rock — proportional to symbol size
+        const trailW = size * 5 + 40 + Math.random() * 60;   // wide: 90-290px
+        const trailH = size * 1.2 + 8 + Math.random() * 10;  // tall: 20-65px (cone shape)
+        const trailBlur = 4 + size * 0.15 + Math.random() * 4; // heavy blur: 4-12px
+        el.style.setProperty('--trail-w', trailW + 'px');
+        el.style.setProperty('--trail-h', trailH + 'px');
+        el.style.setProperty('--trail-blur', trailBlur + 'px');
+        el.style.setProperty('--trail-gradient', color.trail);
+        el.style.setProperty('--core-bright', color.coreBright);
+        el.style.setProperty('--core-mid', color.coreMid);
+
+        // Opacity scales with depth (far = dimmer)
+        const peakOpacity = depth > 0.7 ? 0.5 : depth > 0.4 ? 0.75 : 1;
+        el.style.setProperty('--peak-opacity', peakOpacity);
+        el.style.setProperty('--start-scale', (0.4 + Math.random() * 0.3).toFixed(2));
+        el.style.setProperty('--end-scale', (0.2 + Math.random() * 0.3).toFixed(2));
+
+        // Random start position along top or right edge
+        const fromTop = Math.random() > 0.4;
+        const startX = fromTop ? (Math.random() * window.innerWidth) : window.innerWidth + 20;
+        const startY = fromTop ? -40 : (Math.random() * window.innerHeight * 0.6);
+        el.style.left = startX + 'px';
+        el.style.top = startY + 'px';
+
+        // Move diagonally down-left with varied angles
+        const dx = -(350 + Math.random() * 700);
+        const dy = 250 + Math.random() * 550;
+        const angle = -10 - Math.random() * 35;
+        const duration = 2.5 + Math.random() * 3;
+
+        el.style.setProperty('--dx', dx + 'px');
+        el.style.setProperty('--dy', dy + 'px');
+        el.style.setProperty('--angle', angle + 'deg');
+        el.style.setProperty('--duration', duration + 's');
+
+        container.appendChild(el);
+        activeMeteors++;
+
+        el.addEventListener('animationend', () => {
+            el.remove();
+            activeMeteors--;
+        });
+
+        // Schedule next meteor (faster with fewer active)
+        const delay = 2000 + Math.random() * 5000;
+        setTimeout(spawnMeteor, delay);
+    }
+
+    // Ambient constellation particles
+    function initConstellation() {
+        const DOTS = 20;
+        const colors = [
+            'rgba(176, 36, 255, 0.35)',
+            'rgba(95, 248, 248, 0.25)',
+            'rgba(214, 146, 255, 0.3)',
+            'rgba(255, 255, 255, 0.15)',
+        ];
+
+        for (let i = 0; i < DOTS; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'constellation-dot';
+            dot.style.left = Math.random() * 100 + '%';
+            dot.style.top = Math.random() * 100 + '%';
+            dot.style.setProperty('--dot-size', (1.5 + Math.random() * 3) + 'px');
+            dot.style.setProperty('--dot-color', colors[Math.floor(Math.random() * colors.length)]);
+            dot.style.setProperty('--float-duration', (6 + Math.random() * 10) + 's');
+            dot.style.setProperty('--pulse-duration', (2 + Math.random() * 4) + 's');
+            dot.style.setProperty('--float-x', (-20 + Math.random() * 40) + 'px');
+            dot.style.setProperty('--float-y', (-20 + Math.random() * 40) + 'px');
+            dot.style.setProperty('--min-opacity', (0.1 + Math.random() * 0.15).toFixed(2));
+            dot.style.setProperty('--max-opacity', (0.35 + Math.random() * 0.35).toFixed(2));
+            dot.style.animationDelay = (Math.random() * 8) + 's';
+            container.appendChild(dot);
+        }
+    }
+
+    initConstellation();
+
+    // Stagger the first few meteors
+    setTimeout(spawnMeteor, 1000);
+    setTimeout(spawnMeteor, 2500 + Math.random() * 1500);
+    setTimeout(spawnMeteor, 5000 + Math.random() * 2000);
+}
+
+// ══════════════════════════════════════════
+//  AGENDAR CITA — Full-Screen Calendar
+// ══════════════════════════════════════════
+
+const API_BASE = 'https://dak-calculator.vercel.app';
+const MONTH_NAMES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const DAY_NAMES_FULL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+let citaRawSlots = {};          // Original API response keyed by label
+let citaAvailableDates = {};    // Map: "YYYY-MM-DD" -> { label, slots[] }
+let citaMonths = [];            // ["2025-04", "2025-05"]
+let citaCurrentMonthIdx = 0;
+let citaSelectedDateStr = null; // "YYYY-MM-DD"
+let citaSelectedSlot = null;    // { start, end, hour }
+
+function formatHour12(h24) {
+    const hour = parseInt(h24);
+    const suffix = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    return `${h12}:00 ${suffix}`;
+}
+
+function formatDateLong(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const dayName = DAY_NAMES_FULL[date.getDay()];
+    const capDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+    return `${capDay} ${d} de ${MONTH_NAMES_ES[m - 1].toLowerCase()}`;
+}
+
+function abrirModalCita() {
+    const overlay = document.getElementById('cita-overlay');
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('cita-open');
+    document.body.style.overflow = 'hidden';
+
+    // Reset state
+    citaSelectedDateStr = null;
+    citaSelectedSlot = null;
+
+    // Auto-fill from sidebar
+    const sideNombre = document.getElementById('nombre-cliente')?.value || '';
+    const sideEmail = document.getElementById('email-cliente')?.value || '';
+    const citaNombre = document.getElementById('cita-nombre');
+    const citaEmail = document.getElementById('cita-email');
+    if (citaNombre) citaNombre.value = sideNombre;
+    if (citaEmail) citaEmail.value = sideEmail;
+
+    // Show loading, hide everything else
+    document.getElementById('cita-loading').style.display = 'flex';
+    document.getElementById('cita-left-col').style.display = 'none';
+    document.getElementById('cita-right-col').style.display = 'none';
+    document.getElementById('cita-error').style.display = 'none';
+    document.getElementById('cita-confirmacion').style.display = 'none';
+    document.getElementById('cita-summary-card').style.display = 'none';
+
+    const confirmBtn = document.getElementById('cita-btn-confirmar');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'CONFIRMAR REUNIÓN';
+
+    const cancelBtn = document.getElementById('cita-btn-cancelar');
+    cancelBtn.textContent = 'Cancelar';
+
+    cargarDisponibilidad();
+}
+
+function cerrarModalCita() {
+    const overlay = document.getElementById('cita-overlay');
+    if (overlay) {
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('cita-open');
+        document.body.style.overflow = '';
+    }
+}
+
+async function cargarDisponibilidad() {
+    try {
+        const res = await fetch(`${API_BASE}/api/disponibilidad`);
+        if (!res.ok) throw new Error('Error del servidor');
+        const data = await res.json();
+        citaRawSlots = data.slots || {};
+
+        document.getElementById('cita-loading').style.display = 'none';
+
+        // Parse slots into date-keyed map
+        citaAvailableDates = {};
+        const monthSet = new Set();
+
+        for (const [label, slots] of Object.entries(citaRawSlots)) {
+            if (!slots.length) continue;
+            // Extract date from ISO string using Lima timezone
+            const firstDate = new Date(slots[0].start);
+            const dateKey = firstDate.toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); // "YYYY-MM-DD"
+            citaAvailableDates[dateKey] = { label, slots };
+            monthSet.add(dateKey.substring(0, 7)); // "YYYY-MM"
+        }
+
+        citaMonths = Array.from(monthSet).sort();
+
+        if (citaMonths.length === 0) {
+            document.getElementById('cita-error-msg').textContent = 'No hay horarios disponibles en las próximas 2 semanas.';
+            document.getElementById('cita-error').style.display = 'block';
+            return;
+        }
+
+        citaCurrentMonthIdx = 0;
+        buildCalendarGrid(citaMonths[0]);
+
+        document.getElementById('cita-left-col').style.display = '';
+        document.getElementById('cita-right-col').style.display = '';
+        document.getElementById('cita-slots-container').innerHTML = '<p class="text-sm text-on-surface-variant text-center py-8 opacity-50">← Selecciona un día en el calendario</p>';
+    } catch (err) {
+        document.getElementById('cita-loading').style.display = 'none';
+        document.getElementById('cita-error-msg').textContent = 'No se pudo cargar la disponibilidad. Intenta más tarde.';
+        document.getElementById('cita-error').style.display = 'block';
+    }
+}
+
+function buildCalendarGrid(yearMonth) {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const totalDays = new Date(year, month, 0).getDate();
+
+    // Monday-start: Mon=0, Tue=1, ..., Sun=6
+    let startDow = firstDay.getDay(); // Sun=0, Mon=1, ..., Sat=6
+    startDow = (startDow + 6) % 7;   // Convert to Mon=0
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const grid = document.getElementById('cita-cal-grid');
+    let html = '';
+
+    // Empty cells before first day
+    for (let i = 0; i < startDow; i++) {
+        html += '<div class="cal-cell"></div>';
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dateObj = new Date(year, month - 1, d);
+        const dow = dateObj.getDay();
+        const isWeekend = dow === 0 || dow === 6;
+        const isPast = dateObj < today;
+        const isAvailable = citaAvailableDates.hasOwnProperty(dateStr);
+        const isSelected = dateStr === citaSelectedDateStr;
+
+        let cls = 'cal-cell';
+        if (isWeekend) cls += ' cal-cell--weekend';
+        if (isPast && !isAvailable) cls += ' cal-cell--past';
+        if (isAvailable && !isPast) cls += ' cal-cell--available';
+        if (isSelected) cls += ' cal-cell--selected';
+
+        const disabled = (!isAvailable || isPast) ? 'disabled' : '';
+        const dot = (isAvailable && !isPast && !isSelected) ? '<div class="cal-dot"></div>' : '';
+
+        html += `<button type="button" class="${cls}" data-date="${dateStr}" ${disabled}>
+            <span class="text-sm font-medium">${d}</span>${dot}
+        </button>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Month title
+    document.getElementById('cita-month-title').textContent = `${MONTH_NAMES_ES[month - 1]} ${year}`;
+
+    // Nav buttons
+    document.getElementById('cita-prev-month').disabled = citaCurrentMonthIdx <= 0;
+    document.getElementById('cita-next-month').disabled = citaCurrentMonthIdx >= citaMonths.length - 1;
+
+    // Click handlers for available days
+    grid.querySelectorAll('.cal-cell--available:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => selectCalendarDay(btn.dataset.date));
+    });
+}
+
+function selectCalendarDay(dateStr) {
+    citaSelectedDateStr = dateStr;
+    citaSelectedSlot = null;
+    document.getElementById('cita-btn-confirmar').disabled = true;
+    document.getElementById('cita-summary-card').style.display = 'none';
+
+    // Rebuild calendar to update selection
+    buildCalendarGrid(citaMonths[citaCurrentMonthIdx]);
+
+    // Render time slots for this day
+    const dayData = citaAvailableDates[dateStr];
+    if (dayData) {
+        renderTimeSlots(dayData.slots);
+    }
+}
+
+function renderTimeSlots(slots) {
+    const morning = slots.filter(s => parseInt(s.hour) < 12);
+    const afternoon = slots.filter(s => parseInt(s.hour) >= 12);
+    let html = '';
+
+    if (morning.length > 0) {
+        html += `<div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block mb-3">Mañana</span>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                ${morning.map(s => `<button type="button" class="slot-btn" data-start="${s.start}" data-end="${s.end}" data-hour="${s.hour}">${formatHour12(s.hour)}</button>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    if (afternoon.length > 0) {
+        html += `<div>
+            <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block mb-3">Tarde</span>
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+                ${afternoon.map(s => `<button type="button" class="slot-btn" data-start="${s.start}" data-end="${s.end}" data-hour="${s.hour}">${formatHour12(s.hour)}</button>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    if (!html) {
+        html = '<p class="text-sm text-on-surface-variant text-center py-8">No hay horarios disponibles este día.</p>';
+    }
+
+    const container = document.getElementById('cita-slots-container');
+    container.innerHTML = html;
+
+    container.querySelectorAll('.slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectTimeSlot(btn));
+    });
+}
+
+function selectTimeSlot(btn) {
+    citaSelectedSlot = {
+        start: btn.dataset.start,
+        end: btn.dataset.end,
+        hour: btn.dataset.hour
+    };
+
+    // Update button states
+    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('activo'));
+    btn.classList.add('activo');
+
+    // Enable confirm
+    document.getElementById('cita-btn-confirmar').disabled = false;
+
+    // Show summary card
+    const summaryCard = document.getElementById('cita-summary-card');
+    const summaryText = document.getElementById('cita-summary-text');
+    summaryCard.style.display = '';
+    summaryText.textContent = `${formatDateLong(citaSelectedDateStr)} · ${formatHour12(citaSelectedSlot.hour)}`;
+}
+
+function navigateMonth(dir) {
+    const newIdx = citaCurrentMonthIdx + dir;
+    if (newIdx < 0 || newIdx >= citaMonths.length) return;
+    citaCurrentMonthIdx = newIdx;
+    buildCalendarGrid(citaMonths[citaCurrentMonthIdx]);
+}
+
+async function confirmarCita() {
+    if (!citaSelectedSlot || !citaSelectedDateStr) return;
+
+    const btn = document.getElementById('cita-btn-confirmar');
+
+    if (isCooldown('cita')) {
+        btn.textContent = 'ESPERÁ...';
+        setTimeout(() => { btn.textContent = 'CONFIRMAR REUNIÓN'; }, 3000);
         return;
     }
 
-    // Trying to skip ahead — show notification
-    mostrarWizardToast('⚠️ Completá la sección actual antes de continuar');
+    btn.disabled = true;
+    btn.textContent = 'AGENDANDO...';
+
+    const nombre = (document.getElementById('cita-nombre')?.value?.trim() || '').replace(/[<>"'`]/g, '').substring(0, 100);
+    const email = (document.getElementById('cita-email')?.value?.trim() || '').substring(0, 254);
+
+    if (!email || !validarEmail(email)) {
+        btn.textContent = 'CONFIRMAR REUNIÓN';
+        btn.disabled = false;
+        // Highlight email field
+        const emailField = document.getElementById('cita-email');
+        if (emailField) {
+            emailField.classList.add('ring-2', 'ring-error');
+            emailField.focus();
+            setTimeout(() => emailField.classList.remove('ring-2', 'ring-error'), 3000);
+        }
+        return;
+    }
+
+    // Build services summary
+    const servicios = [];
+    CATEGORIAS.forEach(cat => {
+        if (cat.id === 'personalizado' || !cat.servicios) return;
+        cat.servicios.forEach(s => {
+            if (document.getElementById(`chk-${s.key}`)?.checked) {
+                servicios.push(s.label);
+            }
+        });
+    });
+    itemsPersonalizados.forEach(i => servicios.push(i.nombre));
+
+    try {
+        const res = await fetch(`${API_BASE}/api/agendar-cita`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre,
+                email,
+                fecha_inicio: citaSelectedSlot.start,
+                fecha_fin: citaSelectedSlot.end,
+                servicios: servicios.join(', '),
+            }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al agendar');
+
+        // Hide calendar columns, show confirmation
+        document.getElementById('cita-left-col').style.display = 'none';
+        document.getElementById('cita-right-col').style.display = 'none';
+        document.getElementById('cita-error').style.display = 'none';
+
+        const meetHtml = data.meetLink
+            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="cita-meet-link">🎥 Unirse a Google Meet</a>`
+            : '';
+
+        document.getElementById('cita-resumen').innerHTML = `
+            <span class="cita-success-icon">✅</span>
+            <h2 class="text-xl font-bold text-white mb-4">¡Reunión agendada!</h2>
+            <p class="text-on-surface-variant text-sm mb-6">Te enviamos una invitación con los detalles.</p>
+            <div class="bg-surface-container-high/50 rounded-xl p-5 text-left space-y-2 mb-4 inline-block">
+                <p class="text-sm"><span class="text-on-surface-variant">📅 Fecha:</span> <strong class="text-white">${sanitizeHTML(formatDateLong(citaSelectedDateStr))}</strong></p>
+                <p class="text-sm"><span class="text-on-surface-variant">🕐 Hora:</span> <strong class="text-white">${formatHour12(citaSelectedSlot.hour)}</strong></p>
+                <p class="text-sm"><span class="text-on-surface-variant">📧 Email:</span> <strong class="text-white">${sanitizeHTML(email)}</strong></p>
+            </div>
+            <br>${meetHtml}
+        `;
+        document.getElementById('cita-confirmacion').style.display = 'block';
+
+        btn.textContent = 'LISTO';
+        btn.disabled = true;
+        document.getElementById('cita-btn-cancelar').textContent = 'Cerrar';
+    } catch (err) {
+        const errorDiv = document.getElementById('cita-error');
+        document.getElementById('cita-error-msg').textContent = err.message;
+        errorDiv.style.display = 'block';
+        btn.textContent = 'CONFIRMAR REUNIÓN';
+        btn.disabled = false;
+    }
 }
 
 // ══════════════════════════════════════════
@@ -1092,27 +1401,16 @@ function manejarClickWizardStep(targetStep) {
 // ══════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Step 2: render tabs y cards
-    renderStep2();
+    // Render all services
+    renderServicios();
+    renderExtras();
 
-    // Wizard nav
-    document.getElementById('btn-siguiente').addEventListener('click', irAlSiguiente);
-    document.getElementById('btn-anterior').addEventListener('click', irAlAnterior);
-
-    // Perfil cards
-    document.querySelectorAll('.perfil-card').forEach(c =>
-        c.addEventListener('click', () => seleccionarPerfil(c.dataset.perfil))
-    );
-
-    // Wizard step click navigation
-    document.querySelectorAll('.wizard-step').forEach(el => {
-        el.addEventListener('click', () => {
-            const targetStep = parseInt(el.dataset.step);
-            manejarClickWizardStep(targetStep);
-        });
+    // Perfil buttons
+    document.querySelectorAll('.perfil-btn').forEach(btn => {
+        btn.addEventListener('click', () => seleccionarPerfil(btn.dataset.perfil));
     });
 
-    // Modal
+    // Modal: Ajustes
     document.getElementById('btn-ajustes').addEventListener('click', abrirModalAjustes);
     document.getElementById('modal-ajustes-cerrar').addEventListener('click', cerrarModalAjustes);
     document.getElementById('modal-ajustes-aplicar').addEventListener('click', aplicarAjustes);
@@ -1124,234 +1422,70 @@ document.addEventListener('DOMContentLoaded', () => {
     // Enviar cotización
     document.getElementById('btn-enviar').addEventListener('click', enviarCotizacion);
 
-    // Toggle presupuesto aproximado — actualiza el badge en tiempo real
+    // Toggle presupuesto aproximado
     const chkAprox = document.getElementById('chk-aprox');
     const labelAprox = document.getElementById('label-aprox');
-    
     if (labelAprox && chkAprox) {
-        // Prevent clicking the label container if not admin
         labelAprox.addEventListener('click', e => {
             if (!isAdmin) {
                 e.preventDefault();
-                mostrarErrorToast('No tienes permisos de admin');
+                mostrarErrorToast('🔒 No tienes permisos de admin');
             }
         });
-        
-        chkAprox.addEventListener('change', (e) => {
+        chkAprox.addEventListener('change', e => {
             if (!isAdmin) {
-                // If somehow they bypassed the click, revert the change
                 e.preventDefault();
                 chkAprox.checked = true;
                 return;
             }
-            if (stepActual === 3) renderResumen();
         });
     }
 
-    // Modal Admin events
+    // Modal: Admin Login
     document.getElementById('btn-admin-login')?.addEventListener('click', abrirModalLoginAdmin);
     document.getElementById('modal-login-cerrar')?.addEventListener('click', cerrarModalLoginAdmin);
     document.getElementById('btn-admin-submit')?.addEventListener('click', procesarLoginAdmin);
     document.getElementById('admin-pass')?.addEventListener('keydown', e => {
         if (e.key === 'Enter') procesarLoginAdmin();
     });
+    document.getElementById('modal-login-admin')?.addEventListener('click', ev => {
+        if (ev.target === ev.currentTarget) cerrarModalLoginAdmin();
+    });
 
-    // Logout buttons (header + settings modal)
+    // Logout buttons
     document.getElementById('btn-logout')?.addEventListener('click', logoutAdmin);
     document.getElementById('btn-logout-modal')?.addEventListener('click', logoutAdmin);
 
-    // Escape closes modal
+    // Full-Screen: Agendar Cita
+    document.getElementById('btn-agendar')?.addEventListener('click', abrirModalCita);
+    document.getElementById('cita-cerrar-btn')?.addEventListener('click', cerrarModalCita);
+    document.getElementById('cita-btn-cancelar')?.addEventListener('click', cerrarModalCita);
+    document.getElementById('cita-btn-confirmar')?.addEventListener('click', confirmarCita);
+    document.getElementById('cita-prev-month')?.addEventListener('click', () => navigateMonth(-1));
+    document.getElementById('cita-next-month')?.addEventListener('click', () => navigateMonth(1));
+    document.getElementById('cita-retry-btn')?.addEventListener('click', () => {
+        document.getElementById('cita-error').style.display = 'none';
+        document.getElementById('cita-loading').style.display = 'flex';
+        cargarDisponibilidad();
+    });
+
+    // Escape closes all modals & overlays
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             cerrarModalAjustes();
             cerrarModalLoginAdmin();
+            cerrarModalCita();
         }
     });
 
-    // Agendar cita
-    document.getElementById('btn-agendar')?.addEventListener('click', abrirModalCita);
-    document.getElementById('modal-cita-cerrar')?.addEventListener('click', cerrarModalCita);
-    document.getElementById('btn-cita-cancelar')?.addEventListener('click', cerrarModalCita);
-    document.getElementById('btn-cita-confirmar')?.addEventListener('click', confirmarCita);
-    document.getElementById('modal-cita')?.addEventListener('click', ev => {
-        if (ev.target === ev.currentTarget) cerrarModalCita();
-    });
-
-    // Escape closes cita modal too
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') cerrarModalCita();
-    });
-
-    actualizarFlotante();
+    // Initial state
+    actualizarSidebar();
     actualizarVistaAdmin();
 
-    // Reveal page after state is set (prevents admin→user flicker)
+    // Interactive background
+    initMouseGlow();
+    initMathMeteors();
+
+    // Reveal page
     document.body.classList.add('ready');
 });
-
-// ══════════════════════════════════════════
-//  AGENDAR CITA — Google Calendar
-// ══════════════════════════════════════════
-
-const API_BASE = 'https://dak-calculator.vercel.app';
-
-let citaSlots = {};
-let citaSelectedDay = null;
-let citaSelectedSlot = null;
-
-function abrirModalCita() {
-    const modal = document.getElementById('modal-cita');
-    modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('modal-ajustes--abierto');
-
-    // Reset state
-    citaSelectedDay = null;
-    citaSelectedSlot = null;
-    document.getElementById('btn-cita-confirmar').disabled = true;
-    document.getElementById('cita-loading').style.display = 'flex';
-    document.getElementById('cita-calendario').style.display = 'none';
-    document.getElementById('cita-confirmacion').style.display = 'none';
-    document.getElementById('cita-error').style.display = 'none';
-
-    cargarDisponibilidad();
-}
-
-function cerrarModalCita() {
-    const modal = document.getElementById('modal-cita');
-    if (modal) {
-        modal.setAttribute('aria-hidden', 'true');
-        modal.classList.remove('modal-ajustes--abierto');
-    }
-}
-
-async function cargarDisponibilidad() {
-    try {
-        const res = await fetch(`${API_BASE}/api/disponibilidad`);
-        if (!res.ok) throw new Error('Error del servidor');
-        const data = await res.json();
-        citaSlots = data.slots || {};
-
-        document.getElementById('cita-loading').style.display = 'none';
-
-        const dias = Object.keys(citaSlots);
-        if (dias.length === 0) {
-            document.getElementById('cita-error').textContent = 'No hay horarios disponibles en las próximas 2 semanas.';
-            document.getElementById('cita-error').style.display = 'block';
-            return;
-        }
-
-        renderDias(dias);
-        document.getElementById('cita-calendario').style.display = 'flex';
-    } catch (err) {
-        document.getElementById('cita-loading').style.display = 'none';
-        document.getElementById('cita-error').textContent = 'No se pudo cargar la disponibilidad. Intenta más tarde.';
-        document.getElementById('cita-error').style.display = 'block';
-    }
-}
-
-function renderDias(dias) {
-    const container = document.getElementById('cita-dias');
-    container.innerHTML = dias.map(dia =>
-        `<button type="button" class="cita-dia-btn" data-dia="${sanitizeHTML(dia)}">${sanitizeHTML(dia)}</button>`
-    ).join('');
-
-    container.querySelectorAll('.cita-dia-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            citaSelectedDay = btn.dataset.dia;
-            citaSelectedSlot = null;
-            document.getElementById('btn-cita-confirmar').disabled = true;
-            container.querySelectorAll('.cita-dia-btn').forEach(b => b.classList.remove('activo'));
-            btn.classList.add('activo');
-            renderHoras(citaSlots[citaSelectedDay]);
-        });
-    });
-}
-
-function renderHoras(horas) {
-    const container = document.getElementById('cita-horas');
-    container.innerHTML = horas.map(h =>
-        `<button type="button" class="cita-hora-btn" data-start="${h.start}" data-end="${h.end}">${sanitizeHTML(h.hour)}</button>`
-    ).join('');
-
-    container.querySelectorAll('.cita-hora-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            citaSelectedSlot = { start: btn.dataset.start, end: btn.dataset.end, hour: btn.textContent };
-            container.querySelectorAll('.cita-hora-btn').forEach(b => b.classList.remove('activo'));
-            btn.classList.add('activo');
-            document.getElementById('btn-cita-confirmar').disabled = false;
-        });
-    });
-}
-
-async function confirmarCita() {
-    if (!citaSelectedSlot || !citaSelectedDay) return;
-
-    const btn = document.getElementById('btn-cita-confirmar');
-    btn.disabled = true;
-    btn.textContent = 'Agendando...';
-
-    const nombre = document.getElementById('nombre-cliente')?.value || '';
-    const email = document.getElementById('email-destino')?.value
-        || document.getElementById('email-cliente')?.value || '';
-
-    if (!email || !validarEmail(email)) {
-        btn.textContent = 'Confirmar cita';
-        btn.disabled = false;
-        document.getElementById('cita-error').textContent = 'Ingresa un email válido en la cotización primero.';
-        document.getElementById('cita-error').style.display = 'block';
-        return;
-    }
-
-    // Build services summary
-    const servicios = Array.from(document.querySelectorAll('.svc-card.activo'))
-        .map(c => c.querySelector('.svc-card-name')?.textContent || '')
-        .filter(Boolean)
-        .join(', ');
-
-    try {
-        const res = await fetch(`${API_BASE}/api/agendar-cita`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nombre,
-                email,
-                fecha_inicio: citaSelectedSlot.start,
-                fecha_fin: citaSelectedSlot.end,
-                servicios,
-            }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            throw new Error(data.error || 'Error al agendar');
-        }
-
-        // Show confirmation
-        document.getElementById('cita-calendario').style.display = 'none';
-        document.getElementById('cita-error').style.display = 'none';
-
-        const meetHtml = data.meetLink
-            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="cita-meet-link">🎥 Unirse a Google Meet</a>`
-            : '';
-
-        document.getElementById('cita-resumen').innerHTML = `
-            <span class="cita-success-icon">✅</span>
-            <strong>¡Cita agendada!</strong><br><br>
-            📅 <strong>${sanitizeHTML(citaSelectedDay)}</strong> a las <strong>${sanitizeHTML(citaSelectedSlot.hour)}</strong><br>
-            📧 Se envió invitación a <strong>${sanitizeHTML(email)}</strong><br>
-            ${meetHtml}
-        `;
-        document.getElementById('cita-confirmacion').style.display = 'block';
-
-        // Change footer buttons
-        btn.textContent = 'Listo';
-        btn.disabled = true;
-        document.getElementById('btn-cita-cancelar').textContent = 'Cerrar';
-    } catch (err) {
-        document.getElementById('cita-error').textContent = err.message;
-        document.getElementById('cita-error').style.display = 'block';
-        btn.textContent = 'Confirmar cita';
-        btn.disabled = false;
-    }
-}
