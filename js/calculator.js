@@ -111,9 +111,28 @@ function actualizarVistaAdmin() {
     actualizarSidebar();
 }
 
+// config/credentials.js esta en .gitignore y no se despliega: en produccion da 404
+// siempre. Cargarlo con un <script> fijo dejaba ese error en la consola de todos los
+// prospectos para una funcion que solo usa el equipo. Se carga al abrir el modal, una
+// sola vez, y si no esta el login simplemente no valida.
+let cargaAdminCredenciales = null;
+function cargarCredencialesAdmin() {
+    if (cargaAdminCredenciales) return cargaAdminCredenciales;
+    cargaAdminCredenciales = new Promise(resolve => {
+        if (typeof ADMIN_CREDENTIALS !== 'undefined') return resolve(true);
+        const s = document.createElement('script');
+        s.src = 'config/credentials.js?v=6';
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);   // 404 esperado en produccion
+        document.head.appendChild(s);
+    });
+    return cargaAdminCredenciales;
+}
+
 function abrirModalLoginAdmin() {
     const modal = document.getElementById('modal-login-admin');
     if (!modal) return;
+    cargarCredencialesAdmin();
     modal.setAttribute('aria-hidden', 'false');
     modal.classList.add('modal-open');
     document.getElementById('admin-user').value = '';
@@ -136,7 +155,8 @@ function logoutAdmin() {
     cerrarModalAjustes();
 }
 
-function procesarLoginAdmin() {
+async function procesarLoginAdmin() {
+    await cargarCredencialesAdmin();
     const user = document.getElementById('admin-user').value.trim();
     const pass = document.getElementById('admin-pass').value.trim();
     const errEl = document.getElementById('admin-login-error');
