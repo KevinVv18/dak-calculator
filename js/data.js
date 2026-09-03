@@ -138,18 +138,18 @@ const CATEGORIAS = [
             { tipo: "nivel", key: "pagina-web",       label: "Página web",          unidad: "sitios",  tierLabels: { basico: "Básica", avanzado: "Avanzada" } },
             { tipo: "fijo",  key: "landing-page",      label: "Landing page" },
             { tipo: "fijo",  key: "tienda-online",     label: "Tienda online" },
-            { tipo: "fijo",  key: "mantenimiento-web", label: "Mantenimiento web" },
+            { tipo: "fijo",  key: "mantenimiento-web", label: "Mantenimiento web", recurrencia: "mensual" },
         ]
     },
     {
         id: "marketing", label: "📈 Marketing",
         servicios: [
-            { tipo: "fijo", key: "ads-meta",      label: "Ads Meta (FB + IG)" },
-            { tipo: "fijo", key: "ads-facebook",   label: "Ads solo Facebook" },
-            { tipo: "fijo", key: "ads-instagram",  label: "Ads solo Instagram" },
-            { tipo: "fijo", key: "seo-basico",     label: "SEO básico" },
-            { tipo: "fijo", key: "seo-avanzado",   label: "SEO avanzado" },
-            { tipo: "fijo", key: "sem-campana",    label: "SEM – Campaña Google" },
+            { tipo: "fijo", key: "ads-meta",      label: "Ads Meta (FB + IG)", recurrencia: "mensual" },
+            { tipo: "fijo", key: "ads-facebook",   label: "Ads solo Facebook", recurrencia: "mensual" },
+            { tipo: "fijo", key: "ads-instagram",  label: "Ads solo Instagram", recurrencia: "mensual" },
+            { tipo: "fijo", key: "seo-basico",     label: "SEO básico", recurrencia: "mensual" },
+            { tipo: "fijo", key: "seo-avanzado",   label: "SEO avanzado", recurrencia: "mensual" },
+            { tipo: "fijo", key: "sem-campana",    label: "SEM – Campaña Google", recurrencia: "mensual" },
         ]
     },
     {
@@ -157,9 +157,9 @@ const CATEGORIAS = [
         servicios: [
             { tipo: "nivel", key: "chatbot-whatsapp", label: "Chatbot WhatsApp",       unidad: "bots",    tierLabels: { basico: "FAQ básico", avanzado: "IA + CRM" } },
             { tipo: "nivel", key: "crm-setup",        label: "CRM Setup",              unidad: "setups",  tierLabels: { basico: "Inicial", avanzado: "Completo" } },
-            { tipo: "fijo",  key: "email-marketing",   label: "Email Marketing" },
-            { tipo: "fijo",  key: "auto-redes",        label: "Automatización RRSS" },
-            { tipo: "fijo",  key: "dashboard-reportes", label: "Dashboard & Reportes" },
+            { tipo: "fijo",  key: "email-marketing",   label: "Email Marketing", recurrencia: "mensual" },
+            { tipo: "fijo",  key: "auto-redes",        label: "Automatización RRSS", recurrencia: "mensual" },
+            { tipo: "fijo",  key: "dashboard-reportes", label: "Dashboard & Reportes", recurrencia: "mensual" },
         ]
     },
     {

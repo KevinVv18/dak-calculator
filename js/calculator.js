@@ -25,7 +25,7 @@ function isCooldown(key) {
 }
 
 const CONFIG_KEY = 'dak-calculator-config';
-const CONFIG_VERSION = 5;
+const CONFIG_VERSION = 6; // subir al cambiar la estructura del config. 6 = split pago unico / mensual.
 
 function getConfig() {
     const defaults = {
@@ -508,40 +508,100 @@ function renderExtras() {
 //  CALCULATION
 // ══════════════════════════════════════════
 
-function calcularTotal() {
-    const perfil = document.getElementById('perfil-cliente').value || 'bajo';
-    let subtotalBase = 0;
+// Un servicio se cobra una vez o cada mes. La recurrencia vive en el descriptor de
+// CATEGORIAS (js/data.js) y NO en CONFIG: getConfig() hace un merge superficial por
+// clave y aplicarAjustes() persiste el CONFIG entero, así que un campo nuevo dentro
+// de preciosFijos se perdería en cualquier navegador con precios guardados y el
+// servicio pasaría a «único» en silencio. CATEGORIAS no se persiste nunca.
+const recurrenciaDe = s => (s && s.recurrencia === 'mensual') ? 'mensual' : 'unico';
+
+// La única lectura del DOM. calcularTotal, actualizarSidebar, construirCuerpoEmail y
+// confirmarCita consumen esto. Antes cada una recorría CATEGORIAS por su cuenta: eran
+// cuatro implementaciones de la misma recolección que había que cambiar a la vez para
+// que el email y el sidebar no dijeran números distintos.
+function recolectarSeleccion() {
+    const unico = [], mensual = [];
 
     CATEGORIAS.forEach(cat => {
         if (cat.id === 'personalizado' || !cat.servicios) return;
         cat.servicios.forEach(s => {
             const chk = document.getElementById(`chk-${s.key}`);
             if (!chk?.checked) return;
+
+            let item;
             if (s.tipo === 'nivel') {
-                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
+                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 1;
                 const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
-                subtotalBase += qty * (CONFIG.serviciosBase[s.key]?.[lvl] ?? 0);
-            } else if (s.tipo === 'fijo') {
-                subtotalBase += CONFIG.preciosFijos[s.key]?.precio ?? 0;
+                const precioUnit = CONFIG.serviciosBase[s.key]?.[lvl] ?? 0;
+                item = {
+                    key: s.key, nombre: s.label, tipo: 'nivel', qty, lvl,
+                    tierLabel: s.tierLabels?.[lvl] || NIVELES_LABEL[lvl],
+                    precioUnit, subtotal: qty * precioUnit,
+                };
+            } else {
+                item = {
+                    key: s.key, nombre: s.label, tipo: 'fijo',
+                    subtotal: CONFIG.preciosFijos[s.key]?.precio ?? 0,
+                };
             }
+            item.recurrencia = recurrenciaDe(s);
+            (item.recurrencia === 'mensual' ? mensual : unico).push(item);
         });
     });
 
-    itemsPersonalizados.forEach(i => (subtotalBase += i.precio));
+    itemsPersonalizados.forEach(i => {
+        const item = {
+            key: `custom-${i.id}`, nombre: i.nombre, tipo: 'custom', customId: i.id,
+            subtotal: i.precio,
+            recurrencia: i.recurrencia === 'mensual' ? 'mensual' : 'unico',
+        };
+        (item.recurrencia === 'mensual' ? mensual : unico).push(item);
+    });
 
-    const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
-    const subtotalMult = subtotalBase * multiplicador;
-
-    let extrasTotal = 0;
-    const extrasActivos = [];
+    // Los factores extra son recargos sobre la producción: urgencia, desplazamiento,
+    // revisión, drone. Ninguno es un servicio recurrente, así que van siempre al
+    // bloque de pago único.
+    const extras = [];
     Object.entries(CONFIG.factoresExtra).forEach(([key, obj]) => {
         if (document.getElementById(`extra-${key}`)?.checked) {
-            extrasTotal += obj.precio;
-            extrasActivos.push(obj);
+            extras.push({ key, nombre: obj.nombre, precio: obj.precio });
         }
     });
 
-    return { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal: subtotalMult + extrasTotal };
+    return { unico, mensual, extras };
+}
+
+// Devuelve dos totales, nunca uno. No existe `totalFinal` a propósito: sumar una web
+// de pago único con una gestión de ads mensual da un número que no significa nada, y
+// era justamente la ambigüedad que este cambio elimina. Si algún consumidor se quedó
+// sin migrar, falla ruidosamente en vez de enseñar una cifra mal.
+function calcularTotal() {
+    const perfil = document.getElementById('perfil-cliente')?.value || 'bajo';
+    const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
+    const { unico, mensual, extras } = recolectarSeleccion();
+
+    const suma = arr => arr.reduce((t, i) => t + i.subtotal, 0);
+    const baseUnico = suma(unico);
+    const baseMensual = suma(mensual);
+    const extrasTotal = extras.reduce((t, e) => t + e.precio, 0);
+
+    return {
+        perfil, multiplicador,
+        items: { unico, mensual },
+        extrasActivos: extras,
+        unico: {
+            base: baseUnico,
+            conPerfil: baseUnico * multiplicador,
+            extras: extrasTotal,
+            total: baseUnico * multiplicador + extrasTotal,
+        },
+        mensual: {
+            base: baseMensual,
+            conPerfil: baseMensual * multiplicador,
+            extras: 0,
+            total: baseMensual * multiplicador,
+        },
+    };
 }
 
 // ══════════════════════════════════════════
@@ -549,31 +609,18 @@ function calcularTotal() {
 // ══════════════════════════════════════════
 
 function actualizarSidebar() {
-    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, totalFinal } = calcularTotal();
+    const t = calcularTotal();
+    const { perfil, multiplicador } = t;
     const perfilLabel = PERFIL_LABEL[perfil] || perfil;
 
-    // Collect selected items
-    let items = [];
-    CATEGORIAS.forEach(cat => {
-        if (cat.id === 'personalizado' || !cat.servicios) return;
-        cat.servicios.forEach(s => {
-            const chk = document.getElementById(`chk-${s.key}`);
-            if (!chk?.checked) return;
-            if (s.tipo === 'nivel') {
-                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 1;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
-                const precioUnit = CONFIG.serviciosBase[s.key]?.[lvl] ?? 0;
-                const tierLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
-                items.push({ key: s.key, nombre: s.label, tipo: 'nivel', qty, tierLabel, subtotal: qty * precioUnit });
-            } else if (s.tipo === 'fijo') {
-                const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
-                items.push({ key: s.key, nombre: s.label, tipo: 'fijo', subtotal: p });
-            }
-        });
-    });
-    itemsPersonalizados.forEach(i =>
-        items.push({ key: `custom-${i.id}`, nombre: i.nombre, tipo: 'custom', customId: i.id, subtotal: i.precio })
-    );
+    // La fase 1 solo parte el motor. La vista sigue enseñando un total combinado; los
+    // dos bloques separados llegan en la fase 5, cuando se rehace el sidebar.
+    const subtotalBase = t.unico.base + t.mensual.base;
+    const subtotalMult = subtotalBase * multiplicador;
+    const extrasTotal = t.unico.extras;
+    const totalCombinado = t.unico.total + t.mensual.total;
+
+    const items = t.items.unico.concat(t.items.mensual);
 
     // Render items
     const itemsEl = document.getElementById('sidebar-items');
@@ -642,7 +689,7 @@ function actualizarSidebar() {
     // Update totals
     document.getElementById('sidebar-subtotal').textContent = fmt(subtotalBase);
     document.getElementById('sidebar-extras-total').textContent = fmt(extrasTotal);
-    document.getElementById('sidebar-total').textContent = fmt(totalFinal);
+    document.getElementById('sidebar-total').textContent = fmt(totalCombinado);
 
     // Profile row (admin)
     const rowPerfil = document.getElementById('row-perfil');
@@ -654,7 +701,7 @@ function actualizarSidebar() {
 
     // Mobile total
     const mobileTotal = document.getElementById('mobile-total-value');
-    if (mobileTotal) mobileTotal.textContent = fmt(totalFinal);
+    if (mobileTotal) mobileTotal.textContent = fmt(totalCombinado);
 }
 
 // ══════════════════════════════════════════
@@ -705,7 +752,14 @@ function renderListaCustom() {
 // ══════════════════════════════════════════
 
 function construirCuerpoEmail() {
-    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal } = calcularTotal();
+    const t = calcularTotal();
+    const { perfil, multiplicador, extrasActivos } = t;
+    // Igual que el sidebar: la fase 1 mantiene el email como estaba. Se parte en dos
+    // secciones en la fase 5.
+    const subtotalBase = t.unico.base + t.mensual.base;
+    const subtotalMult = subtotalBase * multiplicador;
+    const extrasTotal = t.unico.extras;
+    const totalCombinado = t.unico.total + t.mensual.total;
     const nombre = document.getElementById('nombre-cliente').value.trim() || 'el cliente';
     const esAprox = document.getElementById('chk-aprox')?.checked ?? true;
     const perfilLabel = PERFIL_LABEL[perfil] || perfil;
@@ -753,7 +807,7 @@ function construirCuerpoEmail() {
     lines.push(
         extrasActivos.length ? `+ Extras:\n${extras}\n  Total extras: ${fmt(extrasTotal)}` : '',
         `──────────────────────────────`,
-        `TOTAL FINAL:            ${fmt(totalFinal)}`,
+        `TOTAL FINAL:            ${fmt(totalCombinado)}`,
         `══════════════════════════════`,
     );
     return lines.filter(Boolean).join('\n');
@@ -789,7 +843,7 @@ function enviarCotizacion() {
             to_email: emailDestino,
             to_name: nombre,
             cotizacion: cuerpo,
-            total: fmt(total.totalFinal),
+            total: fmt(total.unico.total + total.mensual.total),
             mensaje: mensaje || ''
         }, EMAILJS_CONFIG.publicKey)
             .then(() => {
