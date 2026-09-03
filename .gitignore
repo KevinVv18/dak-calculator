@@ -8,3 +8,5 @@ node_modules/
 # Credenciales — NUNCA subir al repo
 config/credentials.js
 *.json.bak
+
+.vercel
