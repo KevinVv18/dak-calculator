@@ -61,17 +61,8 @@
 
 <body class="bg-surface-container-lowest min-h-screen relative font-body selection:bg-primary-dim selection:text-white text-on-surface">
 
-    <!-- ═══ Animated Background ═══ -->
-    <div class="orb w-[500px] h-[500px] bg-primary-dim top-[-100px] left-[-100px]" aria-hidden="true"></div>
-    <div class="orb w-[600px] h-[600px] bg-secondary bottom-[-200px] right-[-100px]" aria-hidden="true"></div>
-    <div class="orb w-[400px] h-[400px] bg-tertiary top-[40%] right-[10%]" aria-hidden="true"></div>
-    <div class="bg-grid fixed inset-0 z-0" aria-hidden="true"></div>
 
-    <!-- ═══ Interactive Background: Mouse Glow ═══ -->
-    <div id="mouse-glow" class="mouse-glow" aria-hidden="true"></div>
 
-    <!-- ═══ Interactive Background: Math Meteors Container ═══ -->
-    <div id="meteor-container" class="meteor-container" aria-hidden="true"></div>
 
     <!-- ═══ Header ═══ -->
     <header class="fixed top-0 w-full z-50 bg-[#030106]/80 backdrop-blur-xl shadow-[0_4px_24px_rgba(176,36,255,0.1)]">
@@ -243,12 +234,6 @@
 
     <!-- ═══ Full-Screen: Agendar Cita ═══ -->
     <div id="cita-overlay" class="cita-overlay" role="dialog" aria-labelledby="cita-titulo" aria-hidden="true">
-        <!-- Ambient orbs for scheduling screen -->
-        <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-            <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-dim orb-blur rounded-full"></div>
-            <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary orb-blur rounded-full"></div>
-        </div>
-
         <!-- Header -->
         <header class="fixed top-0 w-full z-20 bg-[#030106]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(176,36,255,0.15)]">
             <div class="flex justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full max-w-6xl mx-auto">
