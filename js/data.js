@@ -104,10 +104,19 @@ const SERVICE_INFO = {
     "dashboard-reportes":  "Panel centralizado con métricas clave de tu negocio en tiempo real.",
 };
 
-// ── Categorías del wizard (Step 2) ──
+// ── Avisos de coste recurrente ──
+// Estos dos servicios se cobran UNA VEZ, pero arrastran un gasto que el importe no
+// enseña. Decirlo en la ficha, y no en la reunion, es la diferencia entre una
+// referencia honesta y una sorpresa.
+const AVISO_RECURRENTE = {
+    "chatbot-whatsapp": "El montaje se paga una vez. El nivel con IA conversacional consume una API que se factura aparte según el uso.",
+    "crm-setup":        "El montaje se paga una vez. Sin una gestión mensual que lo mantenga al día, un CRM deja de servir en pocas semanas.",
+};
+
+// ── Categorías del catálogo ──
 const CATEGORIAS = [
     {
-        id: "video-foto", label: "🎬 Video & Foto",
+        id: "video-foto", label: "Video y foto", icono: "i-video",
         servicios: [
             { tipo: "nivel", key: "video-corto",   label: "Video reel / corto",  unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Producción" } },
             { tipo: "nivel", key: "video-largo",    label: "Video largo",         unidad: "videos",   tierLabels: { basico: "Simple", avanzado: "Producción" } },
@@ -117,7 +126,7 @@ const CATEGORIAS = [
         ]
     },
     {
-        id: "diseno", label: "🎨 Diseño",
+        id: "diseno", label: "Diseño", icono: "i-diseno",
         servicios: [
             { tipo: "nivel", key: "flyer",              label: "Flyers",              unidad: "flyers",   tierLabels: { basico: "Básico", avanzado: "Avanzado" } },
             { tipo: "fijo",  key: "tarjetas",           label: "Tarjetas" },
@@ -133,7 +142,7 @@ const CATEGORIAS = [
         ]
     },
     {
-        id: "web", label: "🌐 Web",
+        id: "web", label: "Web", icono: "i-web",
         servicios: [
             { tipo: "nivel", key: "pagina-web",       label: "Página web",          unidad: "sitios",  tierLabels: { basico: "Básica", avanzado: "Avanzada" } },
             { tipo: "fijo",  key: "landing-page",      label: "Landing page" },
@@ -142,7 +151,7 @@ const CATEGORIAS = [
         ]
     },
     {
-        id: "marketing", label: "📈 Marketing",
+        id: "marketing", label: "Marketing", icono: "i-marketing",
         servicios: [
             { tipo: "fijo", key: "ads-meta",      label: "Ads Meta (FB + IG)", recurrencia: "mensual" },
             { tipo: "fijo", key: "ads-facebook",   label: "Ads solo Facebook", recurrencia: "mensual" },
@@ -153,7 +162,7 @@ const CATEGORIAS = [
         ]
     },
     {
-        id: "automatizacion", label: "🤖 Automatización", badge: "NUEVO",
+        id: "automatizacion", label: "Automatización", icono: "i-automatizacion",
         servicios: [
             { tipo: "nivel", key: "chatbot-whatsapp", label: "Chatbot WhatsApp",       unidad: "bots",    tierLabels: { basico: "FAQ básico", avanzado: "IA + CRM" } },
             { tipo: "nivel", key: "crm-setup",        label: "CRM Setup",              unidad: "setups",  tierLabels: { basico: "Inicial", avanzado: "Completo" } },
@@ -163,6 +172,6 @@ const CATEGORIAS = [
         ]
     },
     {
-        id: "personalizado", label: "✏️ Personalizado", tipo: "personalizado"
+        id: "personalizado", label: "Otra cosa", icono: "i-libre", tipo: "personalizado"
     }
 ];

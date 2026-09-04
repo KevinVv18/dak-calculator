@@ -1,0 +1,103 @@
+/* ============================================================================
+   tokens.css — el sistema de «La cotización»
+
+   La calculadora no es una página de precios: es el documento de cotización
+   escribiéndose delante del prospecto. De ahí salen casi todas las decisiones
+   de abajo, y por eso se parecen tan poco a las de una landing.
+
+   · Las esquinas son casi rectas. Un documento tiene bordes, no burbujas.
+   · La estructura la llevan FILETES de 1px, no cajas con fondo. Es el recurso
+     estructural de dakagency.net y además es lo único que sobrevive cuando el
+     dueño del negocio le da a «Guardar en PDF»: los navegadores no imprimen
+     fondos salvo que la casilla de gráficos de fondo esté marcada, y esa
+     casilla no la controlamos nosotros.
+   · Los importes van SIEMPRE alineados a la derecha. Poppins no tiene cifras
+     tabulares —su «1» mide la mitad que su «0» y font-variant-numeric no lo
+     arregla porque el subconjunto latin no trae la característica— así que la
+     columna se sostiene por el borde derecho, como en toda cotización impresa.
+     Meter una segunda familia solo para las cifras está prohibido por DESIGN.md.
+   · Los ratios de contraste de abajo están medidos contando el alpha, que es la
+     regla dura. El morado de marca da 4.49 sobre el fondo y NO vale como texto.
+   ========================================================================== */
+
+@layer tokens, base, mundo, utilidades;
+
+@layer tokens {
+  :root {
+    /* ── Superficies ──
+       Tres planos: el escritorio, la hoja, y lo hundido dentro de la hoja. */
+    --fondo:        #030106;   /* el escritorio, casi negro, nunca negro puro */
+    --hoja:         #0B0713;   /* la hoja de la cotización, apenas levantada */
+    --hoja-honda:   #07040E;   /* campos y celdas hundidas dentro de la hoja */
+    --hoja-alta:    #140C22;   /* filas activas, cabeceras de bloque */
+
+    /* ── Filetes ── la estructura. Se imprimen; los fondos no. */
+    --filete:       rgba(232, 228, 240, .13);
+    --filete-medio: rgba(232, 228, 240, .22);
+    --filete-vivo:  rgba(185,  62, 255, .45);
+
+    /* ── Tinta ──  ratio medido sobre --fondo / sobre --hoja */
+    --tinta:        #E8E4F0;                    /* 16.61 / 15.93 */
+    --tinta-2:      rgba(232, 228, 240, .62);   /*  6.43 /  6.39 */
+    --tinta-3:      rgba(232, 228, 240, .55);   /*  5.20 /  5.21 — suelo de texto */
+    --tinta-tenue:  rgba(232, 228, 240, .40);   /*  3.15 — NUNCA texto, solo filetes */
+
+    /* ── Los dos colores de DAK ── */
+    --morado:       #B024FF;   /* 4.49: superficies, bordes y sellos. NO texto */
+    --morado-tinta: #B93EFF;   /* 5.14: el mismo tono, ya legible como texto */
+    --morado-claro: #C778FF;   /* 7.48: énfasis sobre superficie morada */
+    --teal:         #00C8C8;   /* 9.99: la segunda luz. Marca la unidad /mes */
+    --alarma:       #FF6B85;   /* 7.61 */
+    --logro:        #3FD49B;   /* 10.98 */
+
+    /* ── Una sola luz, anclada. DESIGN.md retiró la cuadrícula por esto. ── */
+    --luz: radial-gradient(120% 80% at 18% -10%, rgba(176, 36, 255, .10), transparent 60%);
+
+    /* ── Tipografía ── Poppins autoalojada, sin segunda familia ── */
+    --letra: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    --t-micro:  11px;   /* suelo absoluto de texto funcional. Sin excepciones */
+    --t-menor:  12px;
+    --t-base:   14px;
+    --t-medio:  16px;
+    --t-mayor:  19px;
+    --t-cifra:  26px;
+    --t-total:  clamp(28px, 3.4vw, 38px);
+
+    --peso-normal: 400;
+    --peso-medio:  600;
+    --peso-fuerte: 700;
+
+    /* Tracking negativo solo en display; las mayúsculas pequeñas van abiertas */
+    --track-display: -.02em;
+    --track-rotulo:  .14em;
+
+    /* ── Espaciado, base 4 ── */
+    --e1: 4px;   --e2: 8px;   --e3: 12px;  --e4: 16px;
+    --e5: 20px;  --e6: 24px;  --e8: 32px;  --e10: 40px;  --e14: 56px;
+
+    /* ── Radios ── un documento no es una burbuja ── */
+    --r-nada: 0;
+    --r-min:  2px;
+    --r:      4px;
+    --r-caja: 6px;
+
+    /* ── Profundidad ── con desplazamiento y desenfoque.
+         Un halo de color sin offset es decoración, no profundidad. ── */
+    --sombra-hoja: 0 18px 48px -14px rgba(0, 0, 0, .8);
+    --sombra-flot: 0 -8px 28px -10px rgba(0, 0, 0, .7);
+
+    /* ── Movimiento ── una sola curva en todo el sitio ── */
+    --curva: cubic-bezier(.19, 1, .22, 1);
+    --rapido: 120ms;
+    --medio:  200ms;
+    --lento:  320ms;
+
+    /* ── Medidas ── */
+    --ancho-max: 1460px;
+    --alto-toque: 44px;   /* área táctil objetivo; el mínimo duro es 24 */
+
+    color-scheme: dark;
+    accent-color: var(--morado);
+  }
+}

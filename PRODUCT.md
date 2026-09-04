@@ -104,11 +104,21 @@ Contraste AA contando el alpha. Texto funcional nunca por debajo de 11px. Área 
 el espaciado lo permita, nunca por debajo de 24×24. `prefers-reduced-motion` detiene toda animación
 decorativa. Los tooltips de información tienen que poder leerse en táctil, no solo en hover.
 
+## Decisiones resueltas
+
+- **La acción principal es agendar la reunión.** Es la única que hoy deja rastro comprobable: crea
+  el evento en Google Calendar con su enlace de Meet y su invitación. El envío del presupuesto por
+  email es secundario. WhatsApp no entra en esta superficie por ahora.
+- **DAK no se enteraba de que alguien cotizaba, y hay que arreglarlo.** La cotización se envía al
+  email del propio prospecto y no había ninguna llamada que avisara a DAK. Se añade un segundo envío
+  a DAK con cada cotización.
+- **Chatbot y CRM Setup son de pago único, con salvedad escrita en su ficha.** Texto aprobado, sin
+  cifras: Chatbot — «El montaje se paga una vez. El nivel con IA conversacional consume una API que
+  se factura aparte según el uso.» CRM Setup — «El montaje se paga una vez. Sin una gestión mensual
+  que lo mantenga al día, un CRM deja de servir en pocas semanas.»
+
 ## Decisiones abiertas
 
-- **Si DAK se entera de que alguien cotizó, hoy no consta.** La cotización se envía
-  `to_email: <email del prospecto>`. No hay ninguna llamada que avise a DAK ni que escriba en el
-  MySQL de `admin.dakagency.net`, pese a que `AGENTS.md` dice que la calculadora alimenta esos leads.
-  Puede que la plantilla de EmailJS copie a DAK por dentro, pero eso vive en su dashboard y no se
-  puede comprobar desde el repo. **Sin resolver.** Mientras tanto, la única acción que genera un
-  lead verificable es agendar la reunión.
+- **La escritura de leads en el MySQL de `admin.dakagency.net`.** `AGENTS.md` dice que la
+  calculadora alimenta esos leads, pero no existe tal integración en el código. El aviso a DAK se
+  resuelve por correo; conectar el MySQL es trabajo aparte y no entra en este rediseño.

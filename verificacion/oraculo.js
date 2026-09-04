@@ -62,8 +62,10 @@
   ];
 
   function limpiar() {
-    document.querySelectorAll('input[type=checkbox][id^="chk-"]').forEach(c => (c.checked = false));
-    document.querySelectorAll('input[type=checkbox][id^="extra-"]').forEach(c => (c.checked = false));
+    // La selección es estado, no checkboxes en el DOM
+    Array.from(seleccionados).forEach(k => fijarSeleccion(k, false));
+    extrasActivos.clear();
+    document.querySelectorAll('.extra').forEach(el => el.classList.remove('extra--activo'));
     CATEGORIAS.forEach(cat => (cat.servicios || []).forEach(s => {
       const q = document.getElementById('qty-' + s.key); if (q) q.value = '1';
       const l = document.getElementById('lvl-' + s.key); if (l) l.value = 'basico';
@@ -75,11 +77,11 @@
   function aplicar(e) {
     limpiar();
     e.servicios.forEach(([key, qty, lvl]) => {
-      const c = document.getElementById('chk-' + key); if (c) c.checked = true;
+      fijarSeleccion(key, true);
       if (qty != null) { const q = document.getElementById('qty-' + key); if (q) q.value = String(qty); }
       if (lvl) { const l = document.getElementById('lvl-' + key); if (l) l.value = lvl; }
     });
-    e.extras.forEach(k => { const c = document.getElementById('extra-' + k); if (c) c.checked = true; });
+    e.extras.forEach(k => extrasActivos.add(k));
     e.custom.forEach(([nombre, precio], i) =>
       itemsPersonalizados.push({ id: Date.now() + i, nombre, precio, recurrencia: 'unico' }));
     fijarPerfil(e.perfil);
@@ -122,7 +124,7 @@
   });
 
   limpiar();
-  if (typeof actualizarSidebar === 'function') actualizarSidebar();
+  if (typeof actualizarHoja === 'function') actualizarHoja();
 
   console.table(filas);
   console.log(fallos === 0
