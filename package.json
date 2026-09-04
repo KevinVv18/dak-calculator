@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "node scripts/servidor-local.cjs"
   },
   "dependencies": {
     "googleapis": "^144.0.0"

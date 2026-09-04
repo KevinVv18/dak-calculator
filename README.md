@@ -37,8 +37,12 @@ La verdad de producto, en `PRODUCT.md`.
 
 ## Desarrollo
 
-No hace falta build. Cualquier servidor estático sobre la raíz vale; `.claude/launch.json` usa el
-puerto 3456, que está en la lista blanca de CORS de `api/`.
+No hace falta build ni instalar nada:
+
+    node scripts/servidor-local.cjs
+
+El puerto 3456 está en la lista blanca de CORS de `api/`, así que el calendario funciona en local
+contra la API de producción.
 
 El **modo admin** —multiplicador por perfil y ajuste de precios— necesita `config/credentials.js`,
 que está en `.gitignore` y **nunca se despliega**. Es decir: solo funciona en local, a propósito.

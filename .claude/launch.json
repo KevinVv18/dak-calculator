@@ -2,9 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "//": "Servidor estatico sin dependencias. El repo se despliega sin build, asi que en local se sirve igual. El puerto 3456 esta en la lista blanca de CORS de api/.",
       "name": "dak-calculator",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-l", "3456", "-s", "."],
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/servidor-local.cjs"
+      ],
       "port": 3456
     }
   ]
