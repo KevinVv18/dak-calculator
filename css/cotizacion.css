@@ -621,6 +621,10 @@
     padding: var(--e8) var(--e5);
     overflow-y: auto;
   }
+  /* Carga, error y confirmacion ocupan la rejilla entera: si caen en una
+     columna quedan descentrados y parecen rotos. */
+  #cita-loading, #cita-error, #cita-confirmacion { grid-column: 1 / -1; }
+
   .agenda__panel {
     display: flex; flex-direction: column; gap: var(--e4);
     padding: var(--e5);
