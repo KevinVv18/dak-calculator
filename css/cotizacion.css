@@ -340,9 +340,10 @@
     flex: 1;
     overflow-y: auto;
     padding-bottom: var(--e8);
-    /* El desvanecido dice que el contenido continúa; sin él, «CADA MES» quedaba
-       cortado a media letra bajo el bloque de totales y parecía un fallo. */
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+    /* Sin máscara: apagaba filas y botones de quitar que sí funcionan, y un control
+       vivo pintado como deshabilitado miente. El filete del bloque de totales y su
+       cambio de fondo ya marcan dónde termina el detalle. */
+    scroll-padding-bottom: var(--e5);
   }
 
   .bloque { border-bottom: 1px solid var(--filete-medio); }
@@ -467,6 +468,37 @@
   }
   .total--mes .total__cifra { color: var(--teal); }
   .hoja__totales .sello { margin-top: var(--e3); }
+
+
+  /* ══ Envío por email: acción secundaria, plegada ══ */
+  .envio__resumen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e2);
+    min-height: 36px;
+    font-size: var(--t-menor);
+    color: var(--tinta-2);
+    cursor: pointer;
+    list-style: none;
+    transition: color var(--rapido) var(--curva);
+  }
+  .envio__resumen::-webkit-details-marker { display: none; }
+  .envio__resumen:hover { color: var(--tinta); }
+  .envio__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e2);
+    padding-top: var(--e3);
+  }
+  .envio__cuerpo .campo-texto { width: 100%; }
+  .envio__sello {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e2);
+    cursor: pointer;
+  }
 
   /* ══ Acciones ══ */
   .accion {

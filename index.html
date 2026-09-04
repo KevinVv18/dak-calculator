@@ -143,44 +143,49 @@
 
             <!-- Las dos cifras no pueden quedar debajo del scroll: son el motivo
                  de que esta página exista. Se fijan; lo que se desplaza es el detalle. -->
-            <div class="hoja__totales" id="hoja-totales" hidden>
-                <div class="total" id="total-fila-unico" hidden>
+            <div class="hoja__totales" id="hoja-totales">
+                <div class="total" id="total-fila-unico">
                     <span class="total__rotulo">Se paga una vez</span>
-                    <span class="total__cifra" id="total-unico">S/ 0</span>
+                    <span class="total__cifra" id="total-unico">—</span>
                 </div>
-                <div class="total total--mes" id="total-fila-mensual" hidden>
+                <div class="total total--mes" id="total-fila-mensual">
                     <span class="total__rotulo">Se paga cada mes</span>
-                    <span class="total__cifra" id="total-mensual">S/ 0</span>
+                    <span class="total__cifra" id="total-mensual">—</span>
                 </div>
                 <span class="sello" id="sello">Referencial</span>
             </div>
 
+            <!-- El pie ocupaba 490px del panel y ahogaba el cuerpo de la hoja, que se
+                 quedaba en 230px: el bloque CADA MES no llegaba a enseñar ni una línea
+                 entera. Agendar es LA acción, así que se queda sola; el envío por email
+                 es secundario y se pliega. Además el candado de «referencial» era un
+                 control con llave que el prospecto no puede usar: solo lo ve el equipo. -->
             <div class="hoja__pie">
                 <button type="button" id="btn-agendar" class="accion accion--principal">
                     <svg class="icono" aria-hidden="true"><use href="#i-calendario"></use></svg>
                     Agendar reunión
                 </button>
 
-                <input type="text" id="nombre-cliente" class="campo-texto" placeholder="Tu nombre" maxlength="100" autocomplete="name">
-                <input type="email" id="email-cliente" class="campo-texto" placeholder="Tu email" autocomplete="email">
+                <details class="envio">
+                    <summary class="envio__resumen">
+                        <svg class="icono icono--sm" aria-hidden="true"><use href="#i-correo"></use></svg>
+                        Prefiero recibirlo por email
+                    </summary>
+                    <div class="envio__cuerpo">
+                        <input type="text" id="nombre-cliente" class="campo-texto" placeholder="Tu nombre" maxlength="100" autocomplete="name">
+                        <input type="email" id="email-cliente" class="campo-texto" placeholder="Tu email" autocomplete="email">
+                        <textarea id="email-mensaje" rows="2" class="campo-texto" placeholder="Contanos brevemente qué necesitás"></textarea>
+                        <button type="button" id="btn-enviar" class="accion accion--segunda">Enviarme el presupuesto</button>
+                        <p class="nota" id="email-feedback" role="status"></p>
+                    </div>
+                </details>
 
-                <button type="button" id="btn-enviar" class="accion accion--segunda">
-                    <svg class="icono" aria-hidden="true"><use href="#i-correo"></use></svg>
-                    Enviarme el presupuesto
-                </button>
-                <p class="nota" id="email-feedback" role="status"></p>
-
-                <label class="nota" id="label-aprox" style="display:flex;align-items:center;gap:var(--e2);justify-content:center;cursor:pointer">
+                <label class="nota envio__sello" id="label-aprox" hidden>
                     <input type="checkbox" id="chk-aprox" checked class="sr-solo">
                     <svg class="icono icono--sm" id="icon-lock-aprox" aria-hidden="true"><use href="#i-candado"></use></svg>
-                    <span>Presupuesto referencial</span>
+                    <span>Marcar como cotización oficial</span>
                 </label>
-                <p class="nota" id="tooltip-aprox" hidden>Solo el equipo DAK puede marcar una cotización como oficial.</p>
-
-                <details>
-                    <summary class="nota" style="cursor:pointer">Añadir un mensaje</summary>
-                    <textarea id="email-mensaje" rows="2" class="campo-texto" style="width:100%;margin-top:var(--e2)" placeholder="Contanos brevemente qué necesitás"></textarea>
-                </details>
+                <p class="nota" id="tooltip-aprox" hidden></p>
 
                 <p class="nota">Los importes son una referencia y se ajustan al alcance real del proyecto.</p>
             </div>
@@ -190,17 +195,13 @@
     <!-- Barra flotante en móvil: dos cifras, nunca una combinada -->
     <div class="barra" id="barra">
         <div class="barra__cifras">
-            <span class="barra__dato" id="barra-dato-unico" hidden>
+            <span class="barra__dato" id="barra-dato-unico">
                 <span class="barra__rotulo">Una vez</span>
-                <span class="barra__cifra" id="barra-unico">S/ 0</span>
+                <span class="barra__cifra" id="barra-unico">—</span>
             </span>
-            <span class="barra__dato" id="barra-dato-mensual" hidden>
+            <span class="barra__dato" id="barra-dato-mensual">
                 <span class="barra__rotulo">Cada mes</span>
-                <span class="barra__cifra barra__cifra--mes" id="barra-mensual">S/ 0</span>
-            </span>
-            <span class="barra__dato" id="barra-vacia">
-                <span class="barra__rotulo">Presupuesto</span>
-                <span class="barra__cifra">Sin partidas</span>
+                <span class="barra__cifra barra__cifra--mes" id="barra-mensual">—</span>
             </span>
         </div>
         <button type="button" class="accion accion--principal" id="btn-agendar-movil">

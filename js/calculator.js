@@ -84,6 +84,9 @@ function actualizarVistaAdmin() {
     mostrar('btn-ajustes', isAdmin);
     mostrar('btn-logout', isAdmin);
     mostrar('icon-lock-aprox', !isAdmin);
+    // El candado de «cotización oficial» solo lo ve quien puede usarlo. Un control
+    // con llave delante de un prospecto es ruido, no seguridad.
+    mostrar('label-aprox', isAdmin);
     mostrar('tooltip-aprox', false);
     mostrar('perfil-section', isAdmin);
     mostrar('row-perfil', isAdmin);
@@ -541,26 +544,15 @@ function actualizarHoja() {
     if (vacia) vacia.hidden = hayUnico || hayMensual;
 
     if (hayUnico) document.getElementById('lista-unico').innerHTML = filasUnico;
-    document.getElementById('total-unico').textContent = fmt(t.unico.total);
-    document.getElementById('total-fila-unico').hidden = !hayUnico;
+    document.getElementById('total-unico').textContent = hayUnico ? fmt(t.unico.total) : '—';
     if (hayMensual) document.getElementById('lista-mensual').innerHTML = t.items.mensual.map(lineaAnotacion).join('');
-    document.getElementById('total-mensual').innerHTML = conUnidad(t.mensual.total, true);
-    document.getElementById('total-fila-mensual').hidden = !hayMensual;
-    document.getElementById('hoja-totales').hidden = !(hayUnico || hayMensual);
+    document.getElementById('total-mensual').innerHTML = hayMensual ? conUnidad(t.mensual.total, true) : '—';
 
     // Barra flotante de móvil: dos cifras, nunca una combinada
     const dUnico = document.getElementById('barra-dato-unico');
     const dMensual = document.getElementById('barra-dato-mensual');
-    const dVacia = document.getElementById('barra-vacia');
-    if (dUnico) {
-        dUnico.hidden = !hayUnico;
-        document.getElementById('barra-unico').textContent = fmt(t.unico.total);
-    }
-    if (dMensual) {
-        dMensual.hidden = !hayMensual;
-        document.getElementById('barra-mensual').innerHTML = conUnidad(t.mensual.total, true);
-    }
-    if (dVacia) dVacia.hidden = hayUnico || hayMensual;
+    if (dUnico) document.getElementById('barra-unico').textContent = hayUnico ? fmt(t.unico.total) : '—';
+    if (dMensual) document.getElementById('barra-mensual').innerHTML = hayMensual ? conUnidad(t.mensual.total, true) : '—';
 
     // Fila de perfil, solo para el equipo
     const filaPerfil = document.getElementById('row-perfil');
