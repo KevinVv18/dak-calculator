@@ -54,6 +54,31 @@
   }
   .boton-icono:hover { color: var(--tinta); background: rgba(232, 228, 240, .06); }
 
+
+  /* ══ Portada ══ */
+  .portada {
+    max-width: var(--ancho-max);
+    margin: 0 auto;
+    padding: var(--e10) var(--e5) 0;
+  }
+  .portada__titulo {
+    font-size: clamp(28px, 4.4vw, 52px);
+    max-width: 18ch;
+  }
+  .portada__bajada {
+    margin-top: var(--e4);
+    max-width: 62ch;
+    font-size: var(--t-medio);
+    color: var(--tinta-2);
+  }
+  .portada__bajada strong { color: var(--tinta); font-weight: var(--peso-medio); }
+  /* El teal es la unidad /mes en toda la superficie: también aquí */
+  .portada__bajada strong.mes { color: var(--teal); }
+  @media (max-width: 720px) {
+    .portada { padding: var(--e6) var(--e4) 0; }
+    .portada__bajada { font-size: var(--t-base); }
+  }
+
   /* ══ Estructura ══ */
   .obra {
     display: grid;
@@ -62,7 +87,7 @@
     align-items: start;
     max-width: var(--ancho-max);
     margin: 0 auto;
-    padding: var(--e8) var(--e5) var(--e14);
+    padding: var(--e6) var(--e5) var(--e14);
   }
 
   /* ══ Catálogo: secciones ══ */
@@ -92,15 +117,15 @@
     color: var(--tinta-3);
     white-space: nowrap;
   }
-  .seccion__desplegar { display: none; color: var(--tinta-3); }
+  .seccion__desplegar { color: var(--tinta-3); }
 
   .seccion__cuerpo {
     border-top: 1px solid var(--filete);
     animation: abrir var(--medio) var(--curva);
   }
   @keyframes abrir {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: none; }
+    from { transform: translateY(4px); }
+    to   { transform: none; }
   }
 
   /* ══ La partida: una línea del documento ══ */
@@ -161,12 +186,22 @@
 
   /* Importes: SIEMPRE a la derecha. Poppins no tiene cifras tabulares. */
   .partida__importe {
+    min-width: 104px;
     text-align: right;
     font-size: var(--t-base);
     font-weight: var(--peso-fuerte);
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
-  .partida__importe--rango { color: var(--tinta-2); font-weight: var(--peso-medio); }
+  /* «desde» es un calificador, no parte del importe: se aparta para que las cifras
+     empiecen todas en el mismo sitio. */
+  .partida__desde {
+    display: block;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-normal);
+    color: var(--tinta-3);
+    letter-spacing: .04em;
+  }
 
   /* La marca de recurrencia: el teal es la unidad, no un adorno */
   .mes { color: var(--teal); font-weight: var(--peso-medio); }
@@ -181,6 +216,7 @@
     border-radius: var(--r-min);
     padding: 0 5px;
     line-height: 16px;
+    white-space: nowrap;
   }
 
   /* ══ Detalle de la partida ══ */
@@ -278,7 +314,7 @@
     top: 78px;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 96px);
+    max-height: calc(100vh - 88px);
     overflow: hidden;
     background: var(--hoja);
     border: 1px solid var(--filete-medio);
@@ -300,7 +336,14 @@
     letter-spacing: .04em;
   }
 
-  .hoja__cuerpo { flex: 1; overflow-y: auto; }
+  .hoja__cuerpo {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: var(--e8);
+    /* El desvanecido dice que el contenido continúa; sin él, «CADA MES» quedaba
+       cortado a media letra bajo el bloque de totales y parecía un fallo. */
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
 
   .bloque { border-bottom: 1px solid var(--filete-medio); }
   .bloque__rotulo {
@@ -327,8 +370,8 @@
   }
   /* El único momento de movimiento: la línea entrando en la hoja */
   @keyframes anotar {
-    from { opacity: 0; transform: translateX(-6px); }
-    to   { opacity: 1; transform: none; }
+    from { transform: translateX(-6px); }
+    to   { transform: none; }
   }
   .anotacion__nombre { font-size: var(--t-menor); min-width: 0; }
   .anotacion__detalle { font-size: var(--t-micro); color: var(--tinta-3); }
@@ -477,7 +520,6 @@
       border-bottom: 1px solid var(--filete);
     }
     .seccion__filete { display: none; }
-    .seccion__desplegar { display: block; }
     .seccion__nombre { font-size: var(--t-base); }
 
     .detalle { padding-left: var(--e3); }

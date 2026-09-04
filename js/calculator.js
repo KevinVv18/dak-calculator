@@ -181,7 +181,7 @@ function renderPartida(s) {
 
     if (s.tipo === 'nivel') {
         const desde = CONFIG.serviciosBase[s.key]?.basico ?? 0;
-        importe = `<span class="partida__importe partida__importe--rango">desde ${conUnidad(desde, mensual)}</span>`;
+        importe = `<span class="partida__importe"><span class="partida__desde">desde</span>${conUnidad(desde, mensual)}</span>`;
     } else {
         importe = `<span class="partida__importe">${conUnidad(CONFIG.preciosFijos[s.key]?.precio ?? 0, mensual)}</span>`;
     }
@@ -265,14 +265,15 @@ function renderLibre() {
 
 function renderCatalogo() {
     const cont = document.getElementById('catalogo');
-    const movil = window.matchMedia('(max-width: 720px)').matches;
+
 
     cont.innerHTML = CATEGORIAS.map((cat, i) => {
         const cuerpo = cat.tipo === 'personalizado'
             ? renderLibre()
             : (cat.servicios || []).map(renderPartida).join('');
-        // En móvil solo la primera abierta: nunca un muro de etiquetas cerradas
-        const abierta = movil ? i === 0 : true;
+        // Solo la primera abierta, en cualquier tamaño. Las seis cabeceras dan el
+        // mapa del catálogo de un vistazo; treinta y cuatro filas seguidas, no.
+        const abierta = i === 0;
         const n = (cat.servicios || []).length;
         return `
         <section class="seccion" data-cat="${cat.id}">
@@ -309,23 +310,6 @@ function actualizarCuentas() {
             : `${servicios.length} servicios`;
     });
 }
-
-// Al cruzar el umbral de móvil se ajusta qué secciones están abiertas, pero NO se
-// vuelve a pintar: repintar perdería las cantidades y los niveles ya elegidos.
-const consultaMovil = window.matchMedia('(max-width: 720px)');
-function ajustarPlegado(esMovil) {
-    CATEGORIAS.forEach((cat, i) => {
-        const cuerpo = document.getElementById('cuerpo-' + cat.id);
-        const boton = document.querySelector('.seccion__cabecera[data-cat="' + cat.id + '"]');
-        if (!cuerpo || !boton) return;
-        const abierta = esMovil ? i === 0 : true;
-        cuerpo.hidden = !abierta;
-        boton.setAttribute('aria-expanded', String(abierta));
-        const uso = boton.querySelector('.seccion__desplegar use');
-        if (uso) uso.setAttribute('href', abierta ? '#i-arriba' : '#i-abajo');
-    });
-}
-consultaMovil.addEventListener('change', e => ajustarPlegado(e.matches));
 
 // ══════════════════════════════════════════
 //  INTERACCIÓN

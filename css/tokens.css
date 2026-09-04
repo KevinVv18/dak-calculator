@@ -27,9 +27,9 @@
     /* ── Superficies ──
        Tres planos: el escritorio, la hoja, y lo hundido dentro de la hoja. */
     --fondo:        #030106;   /* el escritorio, casi negro, nunca negro puro */
-    --hoja:         #0B0713;   /* la hoja de la cotización, apenas levantada */
-    --hoja-honda:   #07040E;   /* campos y celdas hundidas dentro de la hoja */
-    --hoja-alta:    #140C22;   /* filas activas, cabeceras de bloque */
+    --hoja:         #120B1E;   /* la hoja: tiene que despegarse del escritorio */
+    --hoja-honda:   #0A0614;   /* campos y celdas hundidas dentro de la hoja */
+    --hoja-alta:    #1B1130;   /* filas activas, bloque de totales */
 
     /* ── Filetes ── la estructura. Se imprimen; los fondos no. */
     --filete:       rgba(232, 228, 240, .13);
