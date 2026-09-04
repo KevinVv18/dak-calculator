@@ -1,60 +1,69 @@
-# Calculadora DAK - Negociadora
+# Calculadora DAK
 
-Calculadora web basada en la información transcrita de las imágenes en la carpeta `datos/`.
+`plan.dakagency.net` — el prospecto arma su presupuesto y ve, por separado, **lo que se paga una
+vez** y **lo que se paga cada mes**.
 
-## Estructura del Proyecto
+Sitio estático desplegado en Vercel. **No hay paso de build**: lo que está en el repo es lo que se
+sirve.
 
-- `index.html` - Interfaz principal de la calculadora
-- `styles.css` - Estilos con tema oscuro
-- `calculator.js` - Lógica de cálculo
-- `data.js` - Datos transcritos de las imágenes
+## Por qué dos cifras y no una
 
-## Datos Transcritos
+DAK vende separando el dinero en capas y diciéndolo en voz alta: la pauta se paga directo a Meta, el
+honorario mensual va a la agencia, y los activos —web, dominio, identidad— son pago único. Sus
+informes de marca lo repiten: la web «es un activo, no un servicio mensual».
 
-### 1. Servicios Base (SERVICIOS_BASE)
-Precios por servicio y nivel de dificultad:
+Hasta septiembre de 2026 esta calculadora sumaba las dos cosas en un único TOTAL FINAL, así que una
+web de S/ 2.500 que se paga una vez y una gestión de ads de S/ 300 al mes salían como el mismo
+número. Contradecía al informe que el prospecto acababa de leer. Ahora no.
 
-| Servicio | Fácil | Medio | Difícil |
-|----------|-------|-------|---------|
-| Video corto | 120 | 200 | 350 |
-| Video largo | 250 | 400 | 700 |
-| Sesión fotos | 100 | 180 | 300 |
-| Portada FB | 50 | 90 | 150 |
+## Estructura
 
-### 2. Perfiles de Cliente (PERFILES_CLIENTE)
-Multiplicadores por perfil:
+    index.html          la calculadora
+    agendar.html        la pantalla de agendar, enlazada aparte desde la web y el chat
+    css/tokens.css      el sistema: color con sus ratios, tipografía, espaciado, movimiento
+    css/base.css        reset, Poppins autoalojada, superficies del navegador
+    css/cotizacion.css  el mundo visual
+    js/comun.js         utilidades que usan las dos superficies
+    js/data.js          catálogo y precios. Aquí y en ningún otro sitio
+    js/calendario.js    el calendario, compartido por las dos superficies
+    js/calculator.js    la calculadora
+    js/agendar.js       arranque de agendar.html
+    js/config.public.js claves de EmailJS. Son públicas por diseño y SÍ van al repo
+    api/                funciones serverless de Google Calendar
+    verificacion/       la red de regresión
 
-- **Bajo**: 1.0
-- **Medio**: 1.2
-- **Alto**: 1.5
+Las decisiones visuales están en `DESIGN.md`, que se subordina al `DESIGN.md` de la web principal.
+La verdad de producto, en `PRODUCT.md`.
 
-### 3. Factores Extra (FACTORES_EXTRA)
-Costos adicionales:
+## Desarrollo
 
-- **Urgencia 48h**: 150
-- **Grabación fuera zona**: 200
-- **Revisión extra**: 80
-- **Drone adicional**: 120
+No hace falta build. Cualquier servidor estático sobre la raíz vale; `.claude/launch.json` usa el
+puerto 3456, que está en la lista blanca de CORS de `api/`.
 
-## Funcionalidad
+El **modo admin** —multiplicador por perfil y ajuste de precios— necesita `config/credentials.js`,
+que está en `.gitignore` y **nunca se despliega**. Es decir: solo funciona en local, a propósito.
+Copiá `config/credentials.example.js` para tenerlo.
 
-La calculadora realiza los siguientes cálculos:
+Ojo: comparar usuario y contraseña en JavaScript de cliente **no es seguridad**. Cualquiera que abra
+el inspector las ve. Es un obstáculo cosmético para que nadie toque los precios por accidente.
 
-1. **Subtotal base**: Suma de servicios seleccionados (videos cortos + fotos)
-2. **Aplicar multiplicador**: Multiplica el subtotal por el multiplicador del perfil de cliente
-3. **Sumar extras**: Agrega los factores extra seleccionados (actualmente solo urgencia)
-4. **Total final**: Suma del subtotal con multiplicador + extras
+## Verificación
 
-## Uso
+No hay tests. Lo que hay es una red de regresión, y hay que usarla:
 
-Simplemente abre `index.html` en tu navegador. La calculadora se actualiza automáticamente cuando cambias cualquier parámetro.
+- `verificacion/oraculo.js` — siete escenarios de cálculo con su total. Se pega en la consola del
+  navegador con la calculadora abierta. El invariante es que `único + mensual` siga dando
+  exactamente el mismo total que antes del split, al céntimo.
+- `verificacion/estados.md` — 39 estados de paridad funcional para repasar antes de mergear.
 
-## Ejemplo de Cálculo
+## Cambiar precios
 
-- Perfil Cliente: Alto (1.5)
-- 3 Videos Cortos nivel Medio: 3 × 200 = 600
-- 5 Fotos nivel Fácil: 5 × 100 = 500
-- Subtotal base: 1,100
-- Con multiplicador (Alto): 1,100 × 1.5 = 1,650
-- Urgencia: +150
-- **Total Final: 1,800**
+Solo en `js/data.js`. Los importes no viven en ningún otro sitio.
+
+La **recurrencia** (`recurrencia: "mensual"`) va en el descriptor de `CATEGORIAS`, nunca dentro de
+`PRECIOS_FIJOS` ni `SERVICIOS_BASE`: `getConfig()` hace un merge superficial por clave y
+`aplicarAjustes()` persiste el `CONFIG` entero, así que un campo nuevo ahí dentro se perdería en
+cualquier navegador con precios guardados y el servicio volvería a «único» sin avisar.
+
+Si se añade un servicio con niveles, no hay que tocar nada más: la lista del modal de ajustes se
+deriva de `CATEGORIAS`.

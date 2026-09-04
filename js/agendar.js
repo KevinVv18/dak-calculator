@@ -59,6 +59,7 @@
             window.parent.postMessage({ type: 'dak-agendar-booked', data: e.detail }, '*'));
     }
 
-    document.getElementById('cita-overlay').hidden = false;
+    const raiz = document.getElementById('cita-overlay');
+    if (raiz) raiz.hidden = false;
     cargarDisponibilidad();
 })();
