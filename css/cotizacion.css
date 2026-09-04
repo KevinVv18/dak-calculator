@@ -316,7 +316,9 @@
     flex-direction: column;
     max-height: calc(100vh - 88px);
     overflow: hidden;
-    background: var(--hoja);
+    background-color: var(--hoja);
+    background-image: var(--grano-hoja);
+    background-blend-mode: screen;
     border: 1px solid var(--filete-medio);
     border-radius: var(--r-caja);
     box-shadow: var(--sombra-hoja);
@@ -411,19 +413,30 @@
 
   /* El sello: BORDE, nunca fondo. Un borde se imprime siempre; los fondos solo
      si el dueño del negocio marca la casilla de gráficos, y eso no lo controlamos. */
+  /* El sello es una impresión, no una etiqueta. Doble filete como los sellos de
+     oficina, letra abierta, y un desplazamiento de turbulencia mínimo que le come
+     el borde igual que la tinta al pisar el papel. La escala del filtro es
+     deliberadamente baja: lo justo para que el borde no sea perfecto. */
   .sello {
     display: inline-block;
-    transform: rotate(-4deg);
-    padding: 3px 10px;
-    border: 1px solid var(--filete-vivo);
+    transform: rotate(-6deg);
+    padding: var(--e2) var(--e4);
+    border: 1.5px solid var(--morado-tinta);
     border-radius: var(--r-min);
-    font-size: var(--t-micro);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--morado-tinta) 40%, transparent);
+    font-size: var(--t-menor);
     font-weight: var(--peso-fuerte);
-    letter-spacing: var(--track-rotulo);
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--morado-tinta);
+    filter: url(#tinta);
+    opacity: .92;
   }
-  .sello--oficial { border-color: color-mix(in srgb, var(--logro) 55%, transparent); color: var(--logro); }
+  .sello--oficial {
+    border-color: var(--logro);
+    color: var(--logro);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--logro) 40%, transparent);
+  }
   .sello-fila { padding: var(--e4) var(--e5) 0; }
 
   .hoja__vacia {
@@ -451,22 +464,29 @@
     border-top: 1px solid var(--filete-medio);
     background: var(--hoja-alta);
   }
-  .total {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--e3);
+  /* El rotulo va ENCIMA de la cifra, no al lado. Con el importe a 54px no cabe
+     en un panel de 400px, y ademas asi se lee un total en un documento: primero
+     el concepto, debajo el numero. */
+  .total + .total { margin-top: var(--e3); padding-top: var(--e3); border-top: 1px solid var(--filete); }
+  .total__rotulo {
+    display: block;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
   }
-  .total + .total { margin-top: var(--e2); padding-top: var(--e2); border-top: 1px solid var(--filete); }
-  .total__rotulo { font-size: var(--t-menor); color: var(--tinta-2); }
   .total__cifra {
-    font-size: var(--t-cifra);
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-total);
+    line-height: 1.02;
     font-weight: var(--peso-fuerte);
-    letter-spacing: var(--track-display);
-    text-align: right;
+    letter-spacing: -.03em;
     white-space: nowrap;
   }
   .total--mes .total__cifra { color: var(--teal); }
+
   .hoja__totales .sello { margin-top: var(--e3); }
 
 
@@ -681,7 +701,6 @@
     display: flex;
     flex-direction: column;
     background: var(--fondo);
-    background-image: var(--luz);
   }
   .agenda__cuerpo {
     display: grid;
@@ -765,6 +784,7 @@
   /* ══ Al imprimir, la pantalla se vuelve papel ══ */
   @media print {
     .cabecera, .barra, .hoja__pie, .obra > :first-child { display: none; }
+    body::before { display: none; }   /* el grano lo pone el papel de verdad */
     body { background: #fff; color: #000; }
     .hoja { position: static; max-height: none; border-color: #000; box-shadow: none; }
     .sello { border-color: #000; color: #000; }

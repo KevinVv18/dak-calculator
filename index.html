@@ -38,6 +38,12 @@
          son un sistema de iconos. -->
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <defs>
+        <!-- Mordida de tinta: desplaza el trazo lo justo para que el borde del
+             sello no sea perfecto, como cuando el tampon pisa el papel. -->
+        <filter id="tinta" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="ruido"/>
+          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
         <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></symbol>
         <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6 18 18M18 6 6 18"/></symbol>
         <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>

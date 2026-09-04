@@ -51,9 +51,6 @@
     margin: 0;
     min-height: 100vh;
     background-color: var(--fondo);
-    background-image: var(--luz);
-    background-repeat: no-repeat;
-    background-attachment: fixed;
     color: var(--tinta);
     font-family: var(--letra);
     font-size: var(--t-base);
@@ -61,6 +58,20 @@
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--grano-mesa);
+    /* Nada de overlay: sobre un fondo casi negro, overlay preserva los oscuros y el
+       grano desaparece. Se suma en claro, que es como se comporta la luz sobre la
+       fibra de verdad. */
+    opacity: .07;
+    mix-blend-mode: screen;
   }
 
   h1, h2, h3, h4 {
