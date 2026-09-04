@@ -69,7 +69,7 @@
       const l = document.getElementById('lvl-' + s.key); if (l) l.value = 'basico';
     }));
     itemsPersonalizados.length = 0;
-    const sel = document.getElementById('perfil-cliente'); if (sel) sel.value = 'bajo';
+    fijarPerfil('bajo');
   }
 
   function aplicar(e) {
@@ -82,7 +82,7 @@
     e.extras.forEach(k => { const c = document.getElementById('extra-' + k); if (c) c.checked = true; });
     e.custom.forEach(([nombre, precio], i) =>
       itemsPersonalizados.push({ id: Date.now() + i, nombre, precio, recurrencia: 'unico' }));
-    const sel = document.getElementById('perfil-cliente'); if (sel) sel.value = e.perfil;
+    fijarPerfil(e.perfil);
   }
 
   // Tras el split, calcularTotal() devuelve {unico,mensual} y ya no `totalFinal`.

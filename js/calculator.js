@@ -72,6 +72,16 @@ const CAT_ICONS = {
     'personalizado': 'edit_note',
 };
 
+// Perfil de cliente. Es un dato de negocio, no de presentacion: vivia en un <select>
+// oculto dentro de la seccion de admin, asi que dejaba de existir si ese bloque no se
+// renderizaba. Ahora el DOM lo refleja, no lo posee.
+const PERFILES_VALIDOS = Object.keys(PERFILES_CLIENTE);
+let perfilActual = 'bajo';
+function fijarPerfil(p) {
+    perfilActual = PERFILES_VALIDOS.includes(p) ? p : 'bajo';
+    return perfilActual;
+}
+
 let itemsPersonalizados = [];
 let isAdmin = sessionStorage.getItem('dak-admin') === 'true';
 
@@ -106,7 +116,7 @@ function actualizarVistaAdmin() {
         if (tooltip) tooltip.classList.remove('hidden');
         if (perfilSection) perfilSection.style.display = 'none';
         if (rowPerfil) rowPerfil.style.display = 'none';
-        document.getElementById('perfil-cliente').value = 'bajo';
+        fijarPerfil('bajo');
     }
     actualizarSidebar();
 }
@@ -188,7 +198,7 @@ function mostrarErrorToast(mensaje) {
 // ══════════════════════════════════════════
 
 function seleccionarPerfil(perfil) {
-    document.getElementById('perfil-cliente').value = perfil;
+    fijarPerfil(perfil);
     document.querySelectorAll('.perfil-btn').forEach(b =>
         b.classList.toggle('perfil-btn--activo', b.dataset.perfil === perfil)
     );
@@ -596,7 +606,7 @@ function recolectarSeleccion() {
 // era justamente la ambigüedad que este cambio elimina. Si algún consumidor se quedó
 // sin migrar, falla ruidosamente en vez de enseñar una cifra mal.
 function calcularTotal() {
-    const perfil = document.getElementById('perfil-cliente')?.value || 'bajo';
+    const perfil = perfilActual;
     const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
     const { unico, mensual, extras } = recolectarSeleccion();
 
@@ -894,16 +904,12 @@ function enviarMailto(email, nombre, cuerpo, mensaje, feedbackEl) {
 //  MODAL AJUSTES
 // ══════════════════════════════════════════
 
-const SERVICIOS_BASE_KEYS = [
-    { key: 'video-corto', label: 'Video reel / corto' },
-    { key: 'video-largo', label: 'Video largo' },
-    { key: 'fotos-estudio', label: 'Sesión en estudio' },
-    { key: 'flyer', label: 'Flyer' },
-    { key: 'branding-manual', label: 'Manual de marca' },
-    { key: 'pagina-web', label: 'Página web' },
-    { key: 'chatbot-whatsapp', label: 'Chatbot WhatsApp' },
-    { key: 'crm-setup', label: 'CRM Setup' },
-];
+// Derivado de CATEGORIAS, no copiado a mano: la lista escrita a pelo se
+// desincronizaba en silencio y el modal de ajustes dejaba de mostrar el servicio.
+const SERVICIOS_BASE_KEYS = CATEGORIAS
+    .flatMap(c => c.servicios || [])
+    .filter(s => s.tipo === 'nivel')
+    .map(s => ({ key: s.key, label: s.label }));
 
 function abrirModalAjustes() {
     const modal = document.getElementById('modal-ajustes');
