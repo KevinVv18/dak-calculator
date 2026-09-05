@@ -2,22 +2,23 @@
 name: Calculadora DAK
 description: La cotización escribiéndose delante del prospecto, no una página de precios.
 colors:
-  fondo: "#030106"
-  hoja: "#120B1E"
-  hoja-honda: "#0A0614"
-  hoja-alta: "#1B1130"
-  morado: "#B024FF"
-  morado-tinta: "#B93EFF"
-  morado-claro: "#C778FF"
-  teal: "#00C8C8"
-  alarma: "#FF6B85"
-  logro: "#3FD49B"
-  tinta: "#E8E4F0"
-  tinta-2: "rgba(232, 228, 240, .62)"
-  tinta-3: "rgba(232, 228, 240, .55)"
-  tinta-tenue: "rgba(232, 228, 240, .40)"
-  filete: "rgba(232, 228, 240, .13)"
-  filete-medio: "rgba(232, 228, 240, .22)"
+  mesa: "#E4E0EB"
+  fondo: "#E4E0EB"
+  hoja: "#FFFFFF"
+  hoja-honda: "#F4F1F8"
+  hoja-alta: "#F3EBFC"
+  morado: "#7A00C2"
+  morado-tinta: "#6D00AF"
+  morado-claro: "#9B2BE0"
+  teal: "#00625F"
+  alarma: "#B4003C"
+  logro: "#0A6B45"
+  tinta: "#14101C"
+  tinta-2: "rgba(20, 16, 28, .70)"
+  tinta-3: "rgba(20, 16, 28, .64)"
+  tinta-tenue: "rgba(20, 16, 28, .40)"
+  filete: "rgba(20, 16, 28, .14)"
+  filete-medio: "rgba(20, 16, 28, .26)"
   filete-vivo: "rgba(185, 62, 255, .45)"
 typography:
   display:
@@ -139,6 +140,19 @@ components:
 > Describe **lo construido**, no lo deseado. Donde hay deuda, se dice que es deuda.
 
 ## Overview
+> **Revisión del 2026-09-04, tarde.** El mundo nació con fondo casi negro porque el
+> sistema padre lo pide, y el resultado se parecía demasiado a lo que había antes:
+> «fondo negro con morado encima» y sensación de plantilla generada. Dos cosas lo
+> causaban y las dos están corregidas. Una, un  morado haciendo de
+> luz ambiental: el mismo truco que los orbes, más disimulado, y la firma más clara
+> del fondo generado. Dos, cero material: se declaró un mundo de documento y se
+> renderizó con rellenos planos.
+>
+> Ahora es **papel sobre escritorio**, que además es lo que la dirección pedía desde
+> el principio: una cotización es de papel, y el fondo oscuro venía de la marca, no
+> del mundo. El morado y el teal se bajaron hasta que aguantan AA sobre blanco; el
+>  de marca da 3.2 sobre papel y no vale ni para texto grande.
+
 
 **Creative North Star: «La cotización»**
 
@@ -153,7 +167,7 @@ que el producto existe para deshacer.
 
 La composición es de dos columnas: a la izquierda el catálogo como **índice de
 partidas regladas**, a la derecha **la hoja**, un panel de 400px pegado al scroll
-con folio, bloques y totales. Densa, oscura, de alto contraste. El color aparece
+con folio, bloques y totales. Papel sobre escritorio, densa y de alto contraste. El color aparece
 poco y siempre significa algo: el morado es acción y marca, el teal es una unidad
 de medida —«cada mes»— y nunca decoración.
 
@@ -197,7 +211,7 @@ alpha, que es la regla dura del sistema padre.
 - **Logro** (`logro`): notas de éxito y el sello OFICIAL del modo admin.
 
 ### Neutral
-- **Escritorio** (`fondo`): casi negro, nunca negro puro. Lleva una sola luz
+- **Escritorio** (`mesa`): gris con un punto de violeta. NO lleva ninguna luz
   radial anclada arriba a la izquierda, al 10% de morado.
 - **Hoja** (`hoja`): el papel. Tiene que despegarse del escritorio.
 - **Hoja honda** (`hoja-honda`): campos, pies de ventana y detalle desplegado.

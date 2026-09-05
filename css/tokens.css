@@ -25,30 +25,38 @@
 @layer tokens {
   :root {
     /* ── Superficies ──
-       Tres planos: el escritorio, la hoja, y lo hundido dentro de la hoja. */
-    --fondo:        #030106;   /* el escritorio, casi negro, nunca negro puro */
-    --hoja:         #120B1E;   /* la hoja: tiene que despegarse del escritorio */
-    --hoja-honda:   #0A0614;   /* campos y celdas hundidas dentro de la hoja */
-    --hoja-alta:    #1B1130;   /* filas activas, bloque de totales */
+       Papel sobre escritorio. La dirección es un documento de cotización, y los
+       documentos son de papel: el fondo oscuro venía de la marca, no del mundo,
+       y era lo que hacía que esto se pareciera a todo lo demás.
 
-    /* ── Filetes ── la estructura. Se imprimen; los fondos no. */
-    --filete:       rgba(232, 228, 240, .13);
-    --filete-medio: rgba(232, 228, 240, .22);
-    --filete-vivo:  rgba(185,  62, 255, .45);
+       La mesa es más oscura que la hoja, para que la hoja se lea como algo
+       APOYADO encima y no como una caja pintada de blanco. */
+    --mesa:         #E4E0EB;   /* el escritorio: gris con un punto de violeta */
+    --fondo:        #E4E0EB;   /* alias, para no romper lo que ya lo usa */
+    --hoja:         #FFFFFF;   /* la hoja de la cotización */
+    --hoja-honda:   #F4F1F8;   /* campos y celdas hundidas */
+    --hoja-alta:    #F3EBFC;   /* filas activas y bloque de totales */
 
-    /* ── Tinta ──  ratio medido sobre --fondo / sobre --hoja */
-    --tinta:        #E8E4F0;                    /* 16.61 / 15.93 */
-    --tinta-2:      rgba(232, 228, 240, .62);   /*  6.43 /  6.39 */
-    --tinta-3:      rgba(232, 228, 240, .55);   /*  5.20 /  5.21 — suelo de texto */
-    --tinta-tenue:  rgba(232, 228, 240, .40);   /*  3.15 — NUNCA texto, solo filetes */
+    /* ── Filetes ── la estructura. En papel se ven mejor que nunca. */
+    --filete:       rgba(20, 16, 28, .14);
+    --filete-medio: rgba(20, 16, 28, .26);
+    --filete-vivo:  rgba(109,  0, 175, .5);
 
-    /* ── Los dos colores de DAK ── */
-    --morado:       #B024FF;   /* 4.49: superficies, bordes y sellos. NO texto */
-    --morado-tinta: #B93EFF;   /* 5.14: el mismo tono, ya legible como texto */
-    --morado-claro: #C778FF;   /* 7.48: énfasis sobre superficie morada */
-    --teal:         #00C8C8;   /* 9.99: la segunda luz. Marca la unidad /mes */
-    --alarma:       #FF6B85;   /* 7.61 */
-    --logro:        #3FD49B;   /* 10.98 */
+    /* ── Tinta ──  ratio medido sobre --mesa / sobre --hoja */
+    --tinta:        #14101C;                  /* 14.42 / 18.74 */
+    --tinta-2:      rgba(20, 16, 28, .70);    /*  6.19 /  7.01 */
+    --tinta-3:      rgba(20, 16, 28, .64);    /*  4.72 /  5.19 — suelo de texto */
+    --tinta-tenue:  rgba(20, 16, 28, .40);    /*  2.6  — NUNCA texto, solo filetes */
+
+    /* ── Los dos colores de DAK, llevados a papel ──
+       El #B024FF de marca sobre blanco da 3.2 y no vale ni para texto grande.
+       Estos son el mismo tono bajado hasta que aguanta AA sobre las dos superficies. */
+    --morado:       #7A00C2;   /* 6.20 / 8.06: superficies y sellos. Blanco encima: 8.06 */
+    --morado-tinta: #6D00AF;   /* 7.12 / 9.25: el morado cuando es texto */
+    --morado-claro: #9B2BE0;   /* hover de superficie morada */
+    --teal:         #00625F;   /* 5.55 / 7.21: la unidad /mes */
+    --alarma:       #B4003C;   /* 5.38 / 6.99 */
+    --logro:        #0A6B45;   /* 5.05 / 6.56 */
 
     /* ── Material ──
        Antes aquí había un radial-gradient morado haciendo de «iluminación
@@ -60,10 +68,10 @@
        más fina. Sin grano, un mundo de documento es un rectángulo oscuro. */
 
     /* Fibra del escritorio: ruido fractal grueso, muy poco opaco */
-    --grano-mesa: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23f)' opacity='.34'/%3E%3C/svg%3E");
+    --grano-mesa: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.62' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23f)' opacity='.30'/%3E%3C/svg%3E");
 
     /* Trama de la hoja: más fina y más densa, como papel de oficina */
-    --grano-hoja: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='.11'/%3E%3C/svg%3E");
+    --grano-hoja: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)' opacity='.10'/%3E%3C/svg%3E");
 
     /* ── Tipografía ── Poppins autoalojada, sin segunda familia ── */
     --letra: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -96,8 +104,10 @@
 
     /* ── Profundidad ── con desplazamiento y desenfoque.
          Un halo de color sin offset es decoración, no profundidad. ── */
-    --sombra-hoja: 0 18px 48px -14px rgba(0, 0, 0, .8);
-    --sombra-flot: 0 -8px 28px -10px rgba(0, 0, 0, .7);
+    /* Sombra de contacto: la hoja está APOYADA en la mesa, no flotando sobre ella.
+       Corta y muy cerca del borde, como el papel de verdad. */
+    --sombra-hoja: 0 1px 1px rgba(20,16,28,.10), 0 10px 26px -14px rgba(20,16,28,.42);
+    --sombra-flot: 0 -6px 22px -10px rgba(20,16,28,.28);
 
     /* ── Movimiento ── una sola curva en todo el sitio ── */
     --curva: cubic-bezier(.19, 1, .22, 1);
@@ -109,7 +119,7 @@
     --ancho-max: 1460px;
     --alto-toque: 44px;   /* área táctil objetivo; el mínimo duro es 24 */
 
-    color-scheme: dark;
+    color-scheme: light;
     accent-color: var(--morado);
   }
 }

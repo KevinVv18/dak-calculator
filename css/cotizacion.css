@@ -90,6 +90,26 @@
     padding: var(--e6) var(--e5) var(--e14);
   }
 
+
+  /* ══ El tarifario ══
+     El catálogo también es papel. Son DOS documentos sobre el mismo escritorio:
+     a la izquierda el tarifario del que se elige, a la derecha la cotización que
+     se va llenando. Con las filas flotando sobre la mesa gris, la mitad izquierda
+     de la pantalla no pertenecía a ningún mundo. */
+  #catalogo {
+    padding: var(--e6) var(--e5) var(--e4);
+    background-color: var(--hoja);
+    background-image: var(--grano-hoja);
+    background-blend-mode: multiply;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-caja);
+    box-shadow: var(--sombra-hoja);
+  }
+
+  @media (max-width: 720px) {
+    #catalogo { padding: var(--e5) var(--e4) var(--e3); }
+  }
+
   /* ══ Catálogo: secciones ══ */
   .seccion + .seccion { margin-top: var(--e8); }
 
@@ -127,6 +147,70 @@
     from { transform: translateY(4px); }
     to   { transform: none; }
   }
+
+
+  /* ══ Membrete ══
+     Emisor arriba, tipo de documento grande, y los datos en pares tabulados.
+     Es la diferencia entre una hoja de cotización y un panel con un título. */
+  .membrete__emisor {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .hoja__titulo {
+    margin-top: var(--e1);
+    font-size: var(--t-cifra);
+    letter-spacing: -.02em;
+  }
+  .membrete {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--e3);
+    margin: var(--e4) 0 0;
+    padding-top: var(--e3);
+    border-top: 1px solid var(--filete);
+  }
+  .membrete__par { min-width: 0; }
+  .membrete dt {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .membrete dd {
+    margin: 2px 0 0;
+    font-size: var(--t-menor);
+    font-weight: var(--peso-medio);
+    color: var(--tinta);
+  }
+
+  /* ══ Cabecera de columnas ══
+     Lo que convierte una lista de servicios en la tabla de partidas de un
+     documento. Sin esto, el catálogo se lee como una lista de tareas. */
+  .columnas {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: var(--e3);
+    padding: 0 var(--e3) var(--e2) var(--e2);
+    border-bottom: 1.5px solid var(--tinta);
+    font-size: var(--t-micro);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-2);
+  }
+  .columnas__importe { min-width: 104px; text-align: right; }
+
+  /* ══ Pautado ══
+     Renglones horizontales, como el papel rayado de un talonario. No es la
+     cuadrícula tileada que DESIGN.md prohíbe: esa es de dos ejes y hace de
+     textura de fondo. Esto es de un eje y solo dentro de la hoja. */
+  .bloque { position: relative; }
+  .anotacion { border-bottom: 1px solid var(--filete); }
+  .anotacion:last-child { border-bottom: 0; }
 
   /* ══ La partida: una línea del documento ══ */
   .partida {
@@ -318,25 +402,13 @@
     overflow: hidden;
     background-color: var(--hoja);
     background-image: var(--grano-hoja);
-    background-blend-mode: screen;
+    background-blend-mode: multiply;
     border: 1px solid var(--filete-medio);
     border-radius: var(--r-caja);
     box-shadow: var(--sombra-hoja);
   }
 
   .hoja__encabezado { padding: var(--e5); border-bottom: 1px solid var(--filete-medio); }
-  .hoja__titulo {
-    font-size: var(--t-mayor);
-    font-weight: var(--peso-fuerte);
-    letter-spacing: var(--track-display);
-  }
-  /* El folio es dato del documento y va DEBAJO del título, nunca encima */
-  .hoja__folio {
-    margin-top: var(--e1);
-    font-size: var(--t-micro);
-    color: var(--tinta-3);
-    letter-spacing: .04em;
-  }
 
   .hoja__cuerpo {
     flex: 1;

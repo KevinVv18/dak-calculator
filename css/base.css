@@ -70,8 +70,9 @@ body::before {
     /* Nada de overlay: sobre un fondo casi negro, overlay preserva los oscuros y el
        grano desaparece. Se suma en claro, que es como se comporta la luz sobre la
        fibra de verdad. */
-    opacity: .07;
-    mix-blend-mode: screen;
+    /* En papel el grano OSCURECE la fibra, no la ilumina: multiply, no screen. */
+    opacity: .5;
+    mix-blend-mode: multiply;
   }
 
   h1, h2, h3, h4 {
@@ -110,7 +111,7 @@ body::before {
   /* ── Superficies del navegador ── */
 
   ::selection {
-    background: rgba(176, 36, 255, .32);
+    background: rgba(122, 0, 194, .22);
     color: #fff;
   }
 

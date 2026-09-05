@@ -109,9 +109,26 @@
         <div id="catalogo"></div>
 
         <aside class="hoja" id="hoja">
+            <!-- Membrete. Un documento no se presenta con una palabra suelta: lleva
+                 emisor, tipo de documento y sus datos en un bloque tabulado. Esto es
+                 lo que separa una hoja de cotización de un panel con un título. -->
             <div class="hoja__encabezado">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
                 <h2 class="hoja__titulo">Cotización</h2>
-                <p class="hoja__folio" id="folio">—</p>
+                <dl class="membrete">
+                    <div class="membrete__par">
+                        <dt>Referencia</dt>
+                        <dd id="folio-ref">—</dd>
+                    </div>
+                    <div class="membrete__par">
+                        <dt>Fecha</dt>
+                        <dd id="folio-fecha">—</dd>
+                    </div>
+                    <div class="membrete__par">
+                        <dt>Importes</dt>
+                        <dd>Referenciales</dd>
+                    </div>
+                </dl>
             </div>
 
             <div class="hoja__cuerpo" id="hoja-cuerpo">

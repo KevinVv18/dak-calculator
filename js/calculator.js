@@ -287,7 +287,7 @@ function renderCatalogo() {
                 <span class="seccion__cuenta" id="cuenta-${cat.id}">${n ? n + ' servicios' : 'a medida'}</span>
                 ${icono(abierta ? 'i-arriba' : 'i-abajo', 'seccion__desplegar')}
             </button>
-            <div class="seccion__cuerpo" id="cuerpo-${cat.id}" ${abierta ? '' : 'hidden'}>${cuerpo}</div>
+            <div class="seccion__cuerpo" id="cuerpo-${cat.id}" ${abierta ? '' : 'hidden'}>${cat.tipo === 'personalizado' ? '' : '<div class="columnas"><span></span><span>Concepto</span><span class="columnas__importe">Importe</span></div>'}${cuerpo}</div>
         </section>`;
     }).join('');
 
@@ -491,10 +491,11 @@ function seleccionarPerfil(perfil) {
 const REFERENCIA = Math.random().toString(16).slice(2, 6).toUpperCase();
 
 function pintarFolio() {
-    const el = document.getElementById('folio');
-    if (!el) return;
-    const fecha = new Date().toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' });
-    el.textContent = `Referencia ${REFERENCIA} · ${fecha} · importes referenciales`;
+    const ref = document.getElementById('folio-ref');
+    const fecha = document.getElementById('folio-fecha');
+    if (ref) ref.textContent = REFERENCIA;
+    if (fecha) fecha.textContent = new Date().toLocaleDateString('es-PE',
+        { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function lineaAnotacion(item) {
