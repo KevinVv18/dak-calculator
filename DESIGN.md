@@ -143,7 +143,7 @@ components:
 > **Revisión del 2026-09-04, tarde.** El mundo nació con fondo casi negro porque el
 > sistema padre lo pide, y el resultado se parecía demasiado a lo que había antes:
 > «fondo negro con morado encima» y sensación de plantilla generada. Dos cosas lo
-> causaban y las dos están corregidas. Una, un  morado haciendo de
+> causaban y las dos están corregidas. Una, un `radial-gradient` morado haciendo de
 > luz ambiental: el mismo truco que los orbes, más disimulado, y la firma más clara
 > del fondo generado. Dos, cero material: se declaró un mundo de documento y se
 > renderizó con rellenos planos.
@@ -151,7 +151,7 @@ components:
 > Ahora es **papel sobre escritorio**, que además es lo que la dirección pedía desde
 > el principio: una cotización es de papel, y el fondo oscuro venía de la marca, no
 > del mundo. El morado y el teal se bajaron hasta que aguantan AA sobre blanco; el
->  de marca da 3.2 sobre papel y no vale ni para texto grande.
+> `#B024FF` de marca da 3.2 sobre papel y no vale ni para texto grande.
 
 
 **Creative North Star: «La cotización»**
