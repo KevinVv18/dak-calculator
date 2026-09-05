@@ -1,0 +1,978 @@
+/* ============================================================================
+   cotizacion.css — el mundo
+
+   Izquierda: el catálogo como ÍNDICE DE PARTIDAS en filas regladas. No son
+   tarjetas. Las tarjetas iguales de icono, título y texto son el contenedor
+   perezoso, y aquí además mentirían: un servicio es una línea de un documento,
+   no un producto en una vitrina.
+
+   Derecha: LA HOJA. Dos bloques cerrados, cada uno con su total. Nunca una
+   cifra combinada dominante, porque sumar una web de pago único con una gestión
+   mensual da un número que no significa nada.
+   ========================================================================== */
+
+@layer mundo {
+
+  /* ══ Cabecera ══ */
+  .cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: color-mix(in srgb, var(--fondo) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--filete);
+  }
+  .cabecera__fila {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e4);
+    max-width: var(--ancho-max);
+    margin: 0 auto;
+    padding: var(--e3) var(--e5);
+  }
+  .cabecera__marca { display: flex; align-items: center; gap: var(--e4); min-width: 0; }
+  .cabecera__logo { height: 26px; width: auto; }
+  .cabecera__sep { width: 1px; height: 20px; background: var(--filete-medio); }
+  .cabecera__titulo {
+    font-size: var(--t-menor);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-2);
+  }
+  .cabecera__acciones { display: flex; align-items: center; gap: var(--e1); }
+
+  .boton-icono {
+    display: grid;
+    place-items: center;
+    width: var(--alto-toque);
+    height: var(--alto-toque);
+    border-radius: var(--r);
+    color: var(--tinta-3);
+    transition: color var(--rapido) var(--curva), background var(--rapido) var(--curva);
+  }
+  .boton-icono:hover { color: var(--tinta); background: var(--roce-fuerte); }
+
+
+  /* ══ Portada ══ */
+  .portada {
+    max-width: var(--ancho-max);
+    margin: 0 auto;
+    padding: var(--e10) var(--e5) 0;
+  }
+  .portada__titulo {
+    font-size: clamp(28px, 4.4vw, 52px);
+    max-width: 18ch;
+  }
+  .portada__bajada {
+    margin-top: var(--e4);
+    max-width: 62ch;
+    font-size: var(--t-medio);
+    color: var(--tinta-2);
+  }
+  .portada__bajada strong { color: var(--tinta); font-weight: var(--peso-medio); }
+  /* El teal es la unidad /mes en toda la superficie: también aquí */
+  .portada__bajada strong.mes { color: var(--teal); }
+  @media (max-width: 720px) {
+    .portada { padding: var(--e6) var(--e4) 0; }
+    .portada__bajada { font-size: var(--t-base); }
+  }
+
+  /* ══ Estructura ══ */
+  .obra {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: var(--e10);
+    align-items: start;
+    max-width: var(--ancho-max);
+    margin: 0 auto;
+    padding: var(--e6) var(--e5) var(--e14);
+  }
+
+
+  /* ══ El tarifario ══
+     El catálogo también es papel. Son DOS documentos sobre el mismo escritorio:
+     a la izquierda el tarifario del que se elige, a la derecha la cotización que
+     se va llenando. Con las filas flotando sobre la mesa gris, la mitad izquierda
+     de la pantalla no pertenecía a ningún mundo. */
+  #catalogo {
+    padding: var(--e6) var(--e5) var(--e4);
+    background-color: var(--hoja);
+    background-image: var(--grano-hoja);
+    background-blend-mode: multiply;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-caja);
+    box-shadow: var(--sombra-hoja);
+  }
+
+  @media (max-width: 720px) {
+    #catalogo { padding: var(--e5) var(--e4) var(--e3); }
+  }
+
+  /* ══ Catálogo: secciones ══ */
+  .seccion + .seccion { margin-top: var(--e8); }
+
+  .seccion__cabecera {
+    display: flex;
+    align-items: center;
+    gap: var(--e3);
+    width: 100%;
+    padding: var(--e2) 0;
+    text-align: left;
+    color: var(--tinta);
+  }
+  .seccion__icono { color: var(--morado-tinta); }
+  .seccion__nombre {
+    font-size: var(--t-medio);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-display);
+  }
+  .seccion__filete { flex: 1; height: 1px; background: var(--filete); }
+  .seccion__cuenta {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+    white-space: nowrap;
+  }
+  .seccion__desplegar { color: var(--tinta-3); }
+
+  .seccion__cuerpo {
+    border-top: 1px solid var(--filete);
+    animation: abrir var(--medio) var(--curva);
+  }
+  @keyframes abrir {
+    from { transform: translateY(4px); }
+    to   { transform: none; }
+  }
+
+
+  /* ══ Membrete ══
+     Emisor arriba, tipo de documento grande, y los datos en pares tabulados.
+     Es la diferencia entre una hoja de cotización y un panel con un título. */
+  .membrete__emisor {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .hoja__titulo {
+    margin-top: var(--e1);
+    font-size: var(--t-cifra);
+    letter-spacing: -.02em;
+  }
+  .membrete {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: var(--e3);
+    margin: var(--e4) 0 0;
+    padding-top: var(--e3);
+    border-top: 1px solid var(--filete);
+  }
+  .membrete__par { min-width: 0; }
+  .membrete dt {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .membrete dd {
+    margin: 2px 0 0;
+    font-size: var(--t-menor);
+    font-weight: var(--peso-medio);
+    color: var(--tinta);
+  }
+
+  /* ══ Cabecera de columnas ══
+     Lo que convierte una lista de servicios en la tabla de partidas de un
+     documento. Sin esto, el catálogo se lee como una lista de tareas. */
+  .columnas {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: var(--e3);
+    padding: 0 var(--e3) var(--e2) var(--e2);
+    border-bottom: 1.5px solid var(--tinta);
+    font-size: var(--t-micro);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-2);
+  }
+  .columnas__importe { min-width: 104px; text-align: right; }
+
+  /* ══ Pautado ══
+     Renglones horizontales, como el papel rayado de un talonario. No es la
+     cuadrícula tileada que DESIGN.md prohíbe: esa es de dos ejes y hace de
+     textura de fondo. Esto es de un eje y solo dentro de la hoja. */
+  .bloque { position: relative; }
+  .anotacion { border-bottom: 1px solid var(--filete); }
+  .anotacion:last-child { border-bottom: 0; }
+
+  /* ══ La partida: una línea del documento ══ */
+  .partida {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--e3);
+    width: 100%;
+    min-height: var(--alto-toque);
+    padding: var(--e3) var(--e3) var(--e3) var(--e2);
+    border-bottom: 1px solid var(--filete);
+    border-left: 1px solid transparent;   /* 1px: el máximo que permite DESIGN.md */
+    text-align: left;
+    color: var(--tinta);
+    cursor: pointer;
+    transition: background var(--rapido) var(--curva),
+                border-color var(--rapido) var(--curva);
+  }
+  .partida:hover { background: var(--roce); }
+  .partida--activa {
+    background: var(--hoja-alta);
+    border-left-color: var(--morado);
+  }
+
+  /* La marca de selección: una casilla dibujada, no un checkbox del sistema */
+  .partida__marca {
+    display: grid;
+    place-items: center;
+    width: 18px; height: 18px;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-min);
+    color: transparent;
+    transition: border-color var(--rapido) var(--curva),
+                background var(--rapido) var(--curva),
+                color var(--rapido) var(--curva);
+  }
+  .partida--activa .partida__marca {
+    border-color: var(--morado);
+    background: var(--morado);
+    color: #fff;
+  }
+  .partida__marca .icono { width: 12px; height: 12px; stroke-width: 2.5; }
+
+  .partida__nombre {
+    display: flex;
+    align-items: center;
+    gap: var(--e2);
+    font-size: var(--t-base);
+    font-weight: var(--peso-medio);
+  }
+  .partida__pie {
+    grid-column: 2 / 4;
+    font-size: var(--t-micro);
+    color: var(--tinta-3);
+    line-height: 1.45;
+  }
+
+  /* Importes: SIEMPRE a la derecha. Poppins no tiene cifras tabulares. */
+  .partida__importe {
+    min-width: 104px;
+    text-align: right;
+    font-size: var(--t-base);
+    font-weight: var(--peso-fuerte);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  /* «desde» es un calificador, no parte del importe: se aparta para que las cifras
+     empiecen todas en el mismo sitio. */
+  .partida__desde {
+    display: block;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-normal);
+    color: var(--tinta-3);
+    letter-spacing: .04em;
+  }
+
+  /* La marca de recurrencia: el teal es la unidad, no un adorno */
+  .mes { color: var(--teal); font-weight: var(--peso-medio); }
+  .etiqueta-mes {
+    display: inline-block;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--teal);
+    border: 1px solid color-mix(in srgb, var(--teal) 45%, transparent);
+    border-radius: var(--r-min);
+    padding: 0 5px;
+    line-height: 16px;
+    white-space: nowrap;
+  }
+
+  /* ══ Detalle de la partida ══ */
+  .detalle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--e5);
+    padding: var(--e4) var(--e3) var(--e5) 30px;
+    background: var(--hoja-honda);
+    border-bottom: 1px solid var(--filete);
+    animation: abrir var(--medio) var(--curva);
+  }
+  .campo { display: flex; flex-direction: column; gap: var(--e2); }
+  .campo__rotulo {
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+
+  .contador {
+    display: flex; align-items: center; width: max-content;
+    border: 1px solid var(--filete-medio); border-radius: var(--r);
+  }
+  .contador__boton {
+    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    color: var(--tinta-2);
+    transition: color var(--rapido) var(--curva), background var(--rapido) var(--curva);
+  }
+  .contador__boton:hover { color: var(--tinta); background: var(--roce-fuerte); }
+  .contador__valor {
+    width: 46px; height: 36px;
+    border: 0; border-inline: 1px solid var(--filete);
+    background: transparent;
+    text-align: center;
+    font-size: var(--t-base);
+    font-weight: var(--peso-fuerte);
+  }
+  .contador__valor:focus { outline: none; background: var(--hoja-alta); }
+
+  .niveles {
+    display: flex; width: max-content; overflow: hidden;
+    border: 1px solid var(--filete-medio); border-radius: var(--r);
+  }
+  .nivel {
+    display: flex; flex-direction: column; gap: 1px;
+    min-height: 36px;
+    padding: var(--e2) var(--e4);
+    color: var(--tinta-2);
+    transition: background var(--rapido) var(--curva), color var(--rapido) var(--curva);
+  }
+  .nivel + .nivel { border-left: 1px solid var(--filete); }
+  .nivel:hover { background: var(--roce); color: var(--tinta); }
+  .nivel--activo { background: var(--morado); color: #fff; }
+  .nivel__nombre { font-size: var(--t-menor); font-weight: var(--peso-medio); line-height: 1.2; }
+  .nivel__precio { font-size: var(--t-micro); opacity: .85; line-height: 1.2; }
+
+  /* ══ Aviso de coste recurrente que no se ve en el importe ══ */
+  .aviso {
+    display: flex;
+    gap: var(--e2);
+    align-items: flex-start;
+    width: 100%;
+    padding: var(--e3);
+    border: 1px solid color-mix(in srgb, var(--teal) 30%, transparent);
+    border-radius: var(--r);
+    background: color-mix(in srgb, var(--teal) 6%, transparent);
+    font-size: var(--t-menor);
+    color: var(--tinta-2);
+  }
+  .aviso .icono { color: var(--teal); margin-top: 1px; }
+
+  /* ══ Partida libre ══ */
+  .libre { padding: var(--e4) var(--e3); border-bottom: 1px solid var(--filete); }
+  .libre__forma { display: flex; flex-wrap: wrap; gap: var(--e2); }
+  .campo-texto {
+    min-height: 40px;
+    padding: var(--e2) var(--e3);
+    background: var(--hoja-honda);
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r);
+    color: var(--tinta);
+    font-size: var(--t-base);
+  }
+  .campo-texto::placeholder { color: var(--tinta-3); }
+  .campo-texto:focus { outline: none; border-color: var(--morado); }
+  .campo-texto--ancho { flex: 1 1 200px; }
+  .campo-texto--cifra { width: 110px; text-align: right; }
+
+  /* ══ LA HOJA ══ */
+  .hoja {
+    position: sticky;
+    top: 78px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 88px);
+    overflow: hidden;
+    background-color: var(--hoja);
+    background-image: var(--grano-hoja);
+    background-blend-mode: multiply;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-caja);
+    box-shadow: var(--sombra-hoja);
+  }
+
+  .hoja__encabezado { padding: var(--e5); border-bottom: 1px solid var(--filete-medio); }
+
+  .hoja__cuerpo {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: var(--e8);
+    /* Sin máscara: apagaba filas y botones de quitar que sí funcionan, y un control
+       vivo pintado como deshabilitado miente. El filete del bloque de totales y su
+       cambio de fondo ya marcan dónde termina el detalle. */
+    scroll-padding-bottom: var(--e5);
+  }
+
+  .bloque { border-bottom: 1px solid var(--filete-medio); }
+  .bloque__rotulo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--e3);
+    padding: var(--e4) var(--e5) var(--e2);
+    font-size: var(--t-micro);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .bloque--mes .bloque__rotulo { color: var(--teal); }
+
+  .anotacion {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: baseline;
+    gap: var(--e3);
+    padding: var(--e2) var(--e5);
+    animation: anotar var(--medio) var(--curva);
+  }
+  /* El único momento de movimiento: la línea entrando en la hoja */
+  @keyframes anotar {
+    from { transform: translateX(-6px); }
+    to   { transform: none; }
+  }
+  .anotacion__nombre { font-size: var(--t-menor); min-width: 0; }
+  .anotacion__detalle { font-size: var(--t-micro); color: var(--tinta-3); }
+  .anotacion__importe {
+    font-size: var(--t-menor);
+    font-weight: var(--peso-fuerte);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .anotacion__quitar {
+    display: grid; place-items: center;
+    width: 26px; height: 26px;
+    border-radius: var(--r-min);
+    color: var(--tinta-tenue);
+    transition: color var(--rapido) var(--curva), background var(--rapido) var(--curva);
+  }
+  .anotacion__quitar:hover { color: var(--alarma); background: rgba(255, 107, 133, .10); }
+
+  .bloque__suma {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--e3);
+    margin: var(--e2) var(--e5) var(--e4);
+    padding-top: var(--e3);
+    border-top: 1px solid var(--filete);
+  }
+  .bloque__suma-rotulo { font-size: var(--t-menor); font-weight: var(--peso-medio); color: var(--tinta-2); }
+  .bloque__suma-cifra {
+    font-size: var(--t-cifra);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-display);
+    text-align: right;
+  }
+  .bloque--mes .bloque__suma-cifra { color: var(--teal); }
+
+  /* El sello: BORDE, nunca fondo. Un borde se imprime siempre; los fondos solo
+     si el dueño del negocio marca la casilla de gráficos, y eso no lo controlamos. */
+  /* El sello es una impresión, no una etiqueta. Doble filete como los sellos de
+     oficina, letra abierta, y un desplazamiento de turbulencia mínimo que le come
+     el borde igual que la tinta al pisar el papel. La escala del filtro es
+     deliberadamente baja: lo justo para que el borde no sea perfecto. */
+  .sello {
+    display: inline-block;
+    transform: rotate(-6deg);
+    padding: var(--e2) var(--e4);
+    border: 1.5px solid var(--morado-tinta);
+    border-radius: var(--r-min);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--morado-tinta) 40%, transparent);
+    font-size: var(--t-menor);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--morado-tinta);
+    filter: url(#tinta);
+    opacity: .92;
+  }
+  .sello--oficial {
+    border-color: var(--logro);
+    color: var(--logro);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--logro) 40%, transparent);
+  }
+  .sello-fila { padding: var(--e4) var(--e5) 0; }
+
+  .hoja__vacia {
+    padding: var(--e10) var(--e5);
+    text-align: center;
+    color: var(--tinta-3);
+    font-size: var(--t-menor);
+  }
+  .hoja__vacia .icono { width: 28px; height: 28px; margin: 0 auto var(--e3); color: var(--tinta-tenue); }
+
+  .hoja__pie {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e3);
+    padding: var(--e5);
+    border-top: 1px solid var(--filete-medio);
+    background: var(--hoja-honda);
+  }
+
+
+  /* Las dos cifras se fijan encima de las acciones: es lo que el prospecto
+     vino a saber, y no puede depender de que llegue haciendo scroll. */
+  .hoja__totales {
+    padding: var(--e4) var(--e5);
+    border-top: 1px solid var(--filete-medio);
+    background: var(--hoja-alta);
+  }
+  /* El rotulo va ENCIMA de la cifra, no al lado. Con el importe a 54px no cabe
+     en un panel de 400px, y ademas asi se lee un total en un documento: primero
+     el concepto, debajo el numero. */
+  .total + .total { margin-top: var(--e3); padding-top: var(--e3); border-top: 1px solid var(--filete); }
+  .total__rotulo {
+    display: block;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-medio);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .total__cifra {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--t-total);
+    line-height: 1.02;
+    font-weight: var(--peso-fuerte);
+    letter-spacing: -.03em;
+    white-space: nowrap;
+  }
+  .total--mes .total__cifra { color: var(--teal); }
+
+  .hoja__totales .sello { margin-top: var(--e3); }
+
+
+  /* ══ Envío por email: acción secundaria, plegada ══ */
+  .envio__resumen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e2);
+    min-height: 36px;
+    font-size: var(--t-menor);
+    color: var(--tinta-2);
+    cursor: pointer;
+    list-style: none;
+    transition: color var(--rapido) var(--curva);
+  }
+  .envio__resumen::-webkit-details-marker { display: none; }
+  .envio__resumen:hover { color: var(--tinta); }
+  .envio__cuerpo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--e2);
+    padding-top: var(--e3);
+  }
+  .envio__cuerpo .campo-texto { width: 100%; }
+  .envio__sello {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e2);
+    cursor: pointer;
+  }
+
+  /* ══ Acciones ══ */
+  .accion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--e2);
+    min-height: var(--alto-toque);
+    padding: 0 var(--e5);
+    border-radius: var(--r);
+    font-size: var(--t-base);
+    font-weight: var(--peso-fuerte);
+    text-decoration: none;   /* el enlace a Meet es un boton, no un enlace subrayado */
+    transition: transform var(--rapido) var(--curva),
+                background var(--rapido) var(--curva),
+                border-color var(--rapido) var(--curva),
+                color var(--rapido) var(--curva);
+  }
+  .accion:active { transform: translateY(1px); }
+  .accion--principal {
+    background: var(--morado);
+    color: #fff;
+    box-shadow: 0 1px 1px rgba(20, 16, 28, .12), 0 6px 16px -10px rgba(20, 16, 28, .5);
+  }
+  /* El texto se queda blanco: #1A0033 sobre #9B2BE0 daba 3.51 y no pasa AA.
+     Blanco sobre ese mismo morado da 5.07. */
+  .accion--principal:hover { background: var(--morado-claro); color: #fff; }
+  .accion--segunda { border: 1px solid var(--filete-medio); color: var(--tinta-2); }
+  .accion--segunda:hover { border-color: var(--morado); color: var(--tinta); }
+  .accion[disabled] { opacity: .4; cursor: not-allowed; }
+
+  .nota { font-size: var(--t-micro); color: var(--tinta-3); text-align: center; line-height: 1.5; }
+  .nota--error { color: var(--alarma); }
+  .nota--ok { color: var(--logro); }
+
+  .barra { display: none; }
+
+  /* ══ Responsive ══ */
+  @media (max-width: 1080px) {
+    .obra { grid-template-columns: minmax(0, 1fr); gap: var(--e6); padding-bottom: 120px; }
+    .hoja { position: static; max-height: none; }
+  }
+
+  @media (max-width: 720px) {
+    .obra { padding: var(--e5) var(--e4) 120px; }
+
+    /* En móvil las secciones son una LISTA, no títulos flotando en el vacío.
+       Antes: seis cabeceras repartidas en casi mil píxeles de nada, porque el
+       margen de cada una seguía ahí aunque el cuerpo estuviera plegado. */
+    .seccion + .seccion { margin-top: 0; }
+    .seccion__cabecera {
+      min-height: 48px;
+      padding: var(--e2) var(--e1);
+      border-bottom: 1px solid var(--filete);
+    }
+    .seccion__filete { display: none; }
+    .seccion__nombre { font-size: var(--t-base); }
+
+    .detalle { padding-left: var(--e3); }
+    .niveles, .contador { width: 100%; }
+    .nivel { flex: 1; }
+
+    .barra {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      gap: var(--e4);
+      padding: var(--e3) var(--e4);
+      background: color-mix(in srgb, var(--hoja) 96%, transparent);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--filete-vivo);
+      box-shadow: var(--sombra-flot);
+    }
+    .barra__cifras { display: flex; flex: 1; gap: var(--e5); min-width: 0; }
+    .barra__dato { display: flex; flex-direction: column; min-width: 0; }
+    .barra__rotulo {
+      font-size: var(--t-micro);
+      font-weight: var(--peso-medio);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--tinta-3);
+    }
+    .barra__cifra { font-size: var(--t-medio); font-weight: var(--peso-fuerte); white-space: nowrap; }
+    .barra__cifra--mes { color: var(--teal); }
+    .barra .accion { padding: 0 var(--e4); }
+  }
+
+
+  /* ══ Filas de recargo y de ajustes ══ */
+  .extra, .ajuste {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--e3);
+    min-height: 40px;
+    padding: var(--e2) var(--e5);
+    cursor: pointer;
+    transition: background var(--rapido) var(--curva);
+  }
+  .extra:hover { background: var(--roce); }
+  .extra__texto { display: flex; align-items: center; gap: var(--e3); font-size: var(--t-menor); }
+  .extra__marca {
+    display: grid; place-items: center;
+    width: 16px; height: 16px; flex: none;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-min);
+    color: transparent;
+  }
+  .extra--activo .extra__marca { border-color: var(--morado); background: var(--morado); color: #fff; }
+  .extra__marca .icono { width: 11px; height: 11px; stroke-width: 3; }
+  .extra__importe { font-size: var(--t-menor); color: var(--tinta-2); white-space: nowrap; }
+  .extra--activo .extra__importe { color: var(--tinta); font-weight: var(--peso-medio); }
+
+  .ajuste { padding-inline: 0; }
+  .ajuste__rotulo { font-size: var(--t-menor); color: var(--tinta-2); }
+  .ajuste__campo { width: 96px; text-align: right; }
+  .ajuste-grupo { padding: var(--e3) 0; border-bottom: 1px solid var(--filete); }
+  .ajuste-grupo__titulo { font-size: var(--t-menor); font-weight: var(--peso-fuerte); }
+
+  /* ══ Perfil (equipo DAK) ══ */
+  .perfil { display: flex; gap: var(--e2); flex-wrap: wrap; }
+  .perfil__boton {
+    display: flex; flex-direction: column; gap: 1px;
+    min-height: 40px;
+    padding: var(--e2) var(--e4);
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r);
+    color: var(--tinta-2);
+    transition: border-color var(--rapido) var(--curva), color var(--rapido) var(--curva);
+  }
+  .perfil__boton--activo { border-color: var(--morado); color: var(--tinta); }
+  .perfil__nombre { font-size: var(--t-menor); font-weight: var(--peso-medio); }
+  .perfil__factor { font-size: var(--t-micro); color: var(--tinta-3); }
+
+  /* ══ Ventanas modales ══ */
+  .velo {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: var(--e4);
+    /* Tinta, no negro puro: es la mesa la que se apaga detras de la ventana. */
+    background: rgba(20, 16, 28, .55);
+    backdrop-filter: blur(3px);
+  }
+  .ventana {
+    display: flex;
+    flex-direction: column;
+    width: min(640px, 100%);
+    max-height: min(84vh, 760px);
+    overflow: hidden;
+    background: var(--hoja);
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-caja);
+    box-shadow: var(--sombra-hoja);
+    animation: abrir var(--medio) var(--curva);
+  }
+  .ventana--angosta { width: min(400px, 100%); }
+  .ventana__cabecera {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
+    padding: var(--e4) var(--e5);
+    border-bottom: 1px solid var(--filete-medio);
+  }
+  .ventana__cuerpo {
+    display: flex; flex-direction: column; gap: var(--e2);
+    padding: var(--e5);
+    overflow-y: auto;
+  }
+  .ventana__pie {
+    display: flex; gap: var(--e2); justify-content: flex-end; flex-wrap: wrap;
+    padding: var(--e4) var(--e5);
+    border-top: 1px solid var(--filete-medio);
+    background: var(--hoja-honda);
+  }
+
+  /* ══ La agenda: la solicitud de reunión ══
+     Es el tercer documento del escritorio, no una capa de otro sistema encima.
+     Antes eran dos rectángulos blancos sin sombra ni trama flotando sobre la
+     mesa, con un título de 30px repetido en cada uno: la costura se veía. */
+  .agenda {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--mesa);
+  }
+  .agenda__cuerpo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: var(--e6);
+    align-items: start;
+    flex: 1;
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: var(--e8) var(--e5) var(--e10);
+    overflow-y: auto;
+  }
+  /* Membrete, carga, error y constancia ocupan la rejilla entera: en una sola
+     columna quedan descentrados y parecen rotos. */
+  .agenda__membrete,
+  #cita-loading, #cita-error, #cita-confirmacion { grid-column: 1 / -1; }
+
+  .agenda__membrete { padding-bottom: var(--e2); }
+  /* Paso 3: cierra el formulario abajo, cruzando las dos columnas */
+  .agenda__panel--ancho { grid-column: 1 / -1; }
+  .agenda__reintentar { margin: var(--e4) auto 0; }
+
+  /* Las hojas: misma receta que #catalogo y .hoja. Trama propia en multiply y
+     sombra de contacto — apoyadas en la mesa, no flotando sobre ella. */
+  .agenda__panel {
+    display: flex; flex-direction: column; gap: var(--e4);
+    padding: var(--e5);
+    background-color: var(--hoja);
+    background-image: var(--grano-hoja);
+    background-blend-mode: multiply;
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-caja);
+    box-shadow: var(--sombra-hoja);
+  }
+
+  /* Rótulo de sección: versalita y filete, como las cabeceras del tarifario.
+     Dos titulares de 30px enfrentados eran dos portadas peleándose. */
+  .agenda__rotulo {
+    display: flex;
+    align-items: center;
+    gap: var(--e3);
+    font-size: var(--t-micro);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-rotulo);
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .agenda__filete { flex: 1; height: 1px; background: var(--filete); }
+  .agenda__rotulo + * { margin-top: calc(var(--e2) * -1); }
+
+  /* Un impreso numera sus campos. Aqui ademas dice en que orden se rellena: dia,
+     hora, datos — que es exactamente el orden en que se apilan en movil. */
+  .agenda__paso {
+    display: grid; place-items: center;
+    width: 20px; height: 20px;
+    border: 1px solid var(--morado-tinta);
+    border-radius: 50%;
+    font-size: var(--t-micro);   /* el suelo de 11px no admite excepciones */
+    line-height: 1;
+    color: var(--morado-tinta);
+    letter-spacing: 0;
+  }
+
+  .agenda__mes { display: flex; align-items: center; justify-content: space-between; gap: var(--e3); }
+  .agenda__mes-nombre {
+    font-size: var(--t-mayor);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-display);
+  }
+  .agenda__nav { display: flex; gap: var(--e1); }
+
+  /* ── El calendario como tabla de talonario ──
+     Celdas pegadas y separadas por filetes, no fichas redondeadas con hueco.
+     No es la cuadrícula tileada que DESIGN.md prohíbe: aquella es una textura de
+     fondo infinita; esto es una tabla con siete columnas y sus días dentro. */
+  .agenda__tabla {
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .agenda__dias-rotulo, .agenda__rejilla {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  /* La ultima fila monta su filete sobre el del contenedor en vez de sumarse */
+  .agenda__rejilla { margin-bottom: -1px; }
+  .agenda__dias-rotulo {
+    border-bottom: 1px solid var(--filete-medio);
+    background: var(--hoja-honda);
+  }
+  .agenda__dias-rotulo span {
+    padding: var(--e2) 0;
+    text-align: center;
+    font-size: var(--t-micro);
+    font-weight: var(--peso-fuerte);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--tinta-3);
+  }
+  .dia {
+    display: grid; place-items: center;
+    min-height: 46px;
+    border: 0;
+    border-right: 1px solid var(--filete);
+    border-bottom: 1px solid var(--filete);
+    border-radius: 0;
+    font-size: var(--t-menor);
+    color: var(--tinta-2);
+    transition: background var(--rapido) var(--curva), color var(--rapido) var(--curva);
+  }
+  .dia:nth-child(7n) { border-right: 0; }
+
+  /* Un día cerrado se TRAMA, como en el calendario de un talonario. Los que
+     quedan en blanco son exactamente los que se pueden elegir, y eso se lee de
+     un golpe sin tener que interpretar ningún color. */
+  .dia--vacio {
+    background: var(--hoja-honda);
+    color: var(--tinta-tenue);
+    cursor: not-allowed;
+  }
+  .dia--libre {
+    background: var(--hoja);
+    color: var(--tinta);
+    font-weight: var(--peso-medio);
+    cursor: pointer;
+  }
+  .dia--libre:hover { background: var(--hoja-alta); color: var(--morado-tinta); }
+  .dia--activo,
+  .dia--activo:hover {
+    background: var(--morado);
+    color: #fff;
+    font-weight: var(--peso-fuerte);
+  }
+
+  /* ── Horas ── */
+  /* Con una sola linea de aviso, este panel se quedaba en 60px de alto al lado de
+     uno de 400 y parecia que faltaba algo. Reserva el sitio que va a ocupar. */
+  .agenda__horas-caja {
+    display: flex; flex-direction: column; justify-content: center;
+    gap: var(--e4);
+    min-height: 168px;
+  }
+  .agenda__horas { display: flex; flex-wrap: wrap; gap: var(--e2); margin-top: var(--e2); }
+  .hora {
+    min-height: var(--alto-toque);
+    padding: 0 var(--e4);
+    border: 1px solid var(--filete-medio);
+    border-radius: var(--r-min);
+    font-size: var(--t-menor);
+    font-weight: var(--peso-medio);
+    color: var(--tinta-2);
+    transition: border-color var(--rapido) var(--curva),
+                background var(--rapido) var(--curva), color var(--rapido) var(--curva);
+  }
+  .hora:hover { border-color: var(--morado); background: var(--hoja-alta); color: var(--morado-tinta); }
+  .hora--activa,
+  .hora--activa:hover { background: var(--morado); border-color: var(--morado); color: #fff; }
+
+  .agenda__datos { display: flex; flex-direction: column; gap: var(--e2); }
+  .agenda__pie {
+    display: flex; gap: var(--e3); justify-content: flex-end;
+    padding: var(--e4) var(--e5);
+    border-top: 1px solid var(--filete-medio);
+    background: var(--hoja-honda);
+  }
+
+  /* ── La constancia ──
+     Al confirmar, la hoja deja de ser un formulario y pasa a ser el comprobante
+     de la reunión: mismos renglones de la cotización y el sello encima. */
+  .agenda__panel--constancia { max-width: 560px; margin: 0 auto; width: 100%; }
+  /* Los renglones vienen de la cotizacion, donde el sangrado lo pone la hoja
+     entera; aqui el padding ya lo pone el panel. */
+  .agenda__panel--constancia .anotacion { padding-inline: 0; }
+  .constancia__nota { text-align: left; margin: var(--e2) 0 var(--e4); }
+  .constancia__sello { display: flex; justify-content: flex-end; margin-top: var(--e5); }
+  .agenda__meet { margin-top: var(--e5); }
+
+  @media (max-width: 860px) {
+    .agenda__cuerpo { grid-template-columns: minmax(0, 1fr); gap: var(--e5); padding: var(--e5) var(--e4) var(--e8); }
+    .agenda__mes-nombre { font-size: var(--t-medio); }
+    /* El membrete a 30px se comia 300px de pantalla antes de dejar ver el
+       calendario, que es a lo que se viene. */
+    .agenda__membrete .hoja__titulo { font-size: var(--t-mayor); }
+    .agenda__membrete .membrete { margin-top: var(--e3); }
+  }
+
+  /* ══ Al imprimir, la pantalla se vuelve papel ══ */
+  @media print {
+    .cabecera, .barra, .hoja__pie, .obra > :first-child { display: none; }
+    body::before { display: none; }   /* el grano lo pone el papel de verdad */
+    body { background: #fff; color: #000; }
+    .hoja { position: static; max-height: none; border-color: #000; box-shadow: none; }
+    .sello { border-color: #000; color: #000; }
+  }
+}

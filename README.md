@@ -1,60 +1,103 @@
-# Calculadora DAK - Negociadora
+# Calculadora DAK
 
-Calculadora web basada en la información transcrita de las imágenes en la carpeta `datos/`.
+`plan.dakagency.net` — el prospecto arma su presupuesto y ve, por separado, **lo que se paga una
+vez** y **lo que se paga cada mes**.
 
-## Estructura del Proyecto
+Sitio estático. **No hay paso de build**: lo que está en el repo es lo que se sirve.
 
-- `index.html` - Interfaz principal de la calculadora
-- `styles.css` - Estilos con tema oscuro
-- `calculator.js` - Lógica de cálculo
-- `data.js` - Datos transcritos de las imágenes
+## Dónde vive cada cosa
 
-## Datos Transcritos
+Son dos alojamientos distintos, y confundirlos cuesta un despliegue:
 
-### 1. Servicios Base (SERVICIOS_BASE)
-Precios por servicio y nivel de dificultad:
+| Qué | Dónde |
+|---|---|
+| La página (`index.html`, `agendar.html`, `css/`, `js/`, `assets/`) | **Hostinger**, cuenta `u567580447`, en `domains/plan.dakagency.net/public_html/` |
+| Las funciones de `/api` (Google Calendar) | **Vercel**, en `dak-calculator.vercel.app` |
 
-| Servicio | Fácil | Medio | Difícil |
-|----------|-------|-------|---------|
-| Video corto | 120 | 200 | 350 |
-| Video largo | 250 | 400 | 700 |
-| Sesión fotos | 100 | 180 | 300 |
-| Portada FB | 50 | 90 | 150 |
+`js/comun.js` apunta a Vercel con `API_BASE`, así que **toda llamada a la API es
+cross-origin** y depende de la lista blanca de `ALLOWED_ORIGINS` en `api/*.js`. Por eso
+esas respuestas llevan `Vary: Origin`: sin él, una respuesta cacheada para un origen se
+sirve a otro y «Agendar» deja de funcionar en ventanas de cinco minutos.
 
-### 2. Perfiles de Cliente (PERFILES_CLIENTE)
-Multiplicadores por perfil:
+El docroot de Hostinger **no es un checkout de git**: no hay `.git`, los archivos se
+suben. Dos consecuencias:
 
-- **Bajo**: 1.0
-- **Medio**: 1.2
-- **Alto**: 1.5
+- Se sirven en abierto `README.md`, `package.json`, `vercel.json` y `.gitignore`, que
+  están ahí solo porque se subió el repo entero.
+- La CSP de `vercel.json` **no se aplica a la página**. Hostinger responde únicamente
+  `content-security-policy: upgrade-insecure-requests`. Ese bloque de `vercel.json` rige
+  la API y documenta la intención; no protege el HTML.
 
-### 3. Factores Extra (FACTORES_EXTRA)
-Costos adicionales:
+### Antes de subir nada, comprobar el servidor
 
-- **Urgencia 48h**: 150
-- **Grabación fuera zona**: 200
-- **Revisión extra**: 80
-- **Drone adicional**: 120
+En julio de 2026 alguien editó `js/agendar.js` **a mano en producción** para mandar el
+lead al MySQL de `admin.dakagency.net`, y dejó un `agendar.js.bak-20260703` al lado. Esa
+edición nunca llegó al repo. Está portada a `js/calendario.js` (`avisarPanelDAK`), así que
+ahora la mandan las dos superficies, pero la lección se queda: **este servidor recibe
+parches a mano**. Comparar antes de sobrescribir.
 
-## Funcionalidad
+## Por qué dos cifras y no una
 
-La calculadora realiza los siguientes cálculos:
+DAK vende separando el dinero en capas y diciéndolo en voz alta: la pauta se paga directo a Meta, el
+honorario mensual va a la agencia, y los activos —web, dominio, identidad— son pago único. Sus
+informes de marca lo repiten: la web «es un activo, no un servicio mensual».
 
-1. **Subtotal base**: Suma de servicios seleccionados (videos cortos + fotos)
-2. **Aplicar multiplicador**: Multiplica el subtotal por el multiplicador del perfil de cliente
-3. **Sumar extras**: Agrega los factores extra seleccionados (actualmente solo urgencia)
-4. **Total final**: Suma del subtotal con multiplicador + extras
+Hasta septiembre de 2026 esta calculadora sumaba las dos cosas en un único TOTAL FINAL, así que una
+web de S/ 2.500 que se paga una vez y una gestión de ads de S/ 300 al mes salían como el mismo
+número. Contradecía al informe que el prospecto acababa de leer. Ahora no.
 
-## Uso
+## Estructura
 
-Simplemente abre `index.html` en tu navegador. La calculadora se actualiza automáticamente cuando cambias cualquier parámetro.
+    index.html          la calculadora
+    agendar.html        la pantalla de agendar, enlazada aparte desde la web y el chat
+    css/tokens.css      el sistema: color con sus ratios, tipografía, espaciado, movimiento
+    css/base.css        reset, Poppins autoalojada, superficies del navegador
+    css/cotizacion.css  el mundo visual
+    js/comun.js         utilidades que usan las dos superficies
+    js/data.js          catálogo y precios. Aquí y en ningún otro sitio
+    js/calendario.js    el calendario, compartido por las dos superficies
+    js/calculator.js    la calculadora
+    js/agendar.js       arranque de agendar.html
+    js/config.public.js claves de EmailJS. Son públicas por diseño y SÍ van al repo
+    api/                funciones serverless de Google Calendar
+    verificacion/       la red de regresión
 
-## Ejemplo de Cálculo
+Las decisiones visuales están en `DESIGN.md`, que se subordina al `DESIGN.md` de la web principal.
+La verdad de producto, en `PRODUCT.md`.
 
-- Perfil Cliente: Alto (1.5)
-- 3 Videos Cortos nivel Medio: 3 × 200 = 600
-- 5 Fotos nivel Fácil: 5 × 100 = 500
-- Subtotal base: 1,100
-- Con multiplicador (Alto): 1,100 × 1.5 = 1,650
-- Urgencia: +150
-- **Total Final: 1,800**
+## Desarrollo
+
+No hace falta build ni instalar nada:
+
+    node scripts/servidor-local.cjs
+
+El puerto 3456 está en la lista blanca de CORS de `api/`, así que el calendario funciona en local
+contra la API de producción.
+
+El **modo admin** —multiplicador por perfil y ajuste de precios— necesita `config/credentials.js`,
+que está en `.gitignore` y **nunca se despliega**. Es decir: solo funciona en local, a propósito.
+Copiá `config/credentials.example.js` para tenerlo.
+
+Ojo: comparar usuario y contraseña en JavaScript de cliente **no es seguridad**. Cualquiera que abra
+el inspector las ve. Es un obstáculo cosmético para que nadie toque los precios por accidente.
+
+## Verificación
+
+No hay tests. Lo que hay es una red de regresión, y hay que usarla:
+
+- `verificacion/oraculo.js` — siete escenarios de cálculo con su total. Se pega en la consola del
+  navegador con la calculadora abierta. El invariante es que `único + mensual` siga dando
+  exactamente el mismo total que antes del split, al céntimo.
+- `verificacion/estados.md` — 39 estados de paridad funcional para repasar antes de mergear.
+
+## Cambiar precios
+
+Solo en `js/data.js`. Los importes no viven en ningún otro sitio.
+
+La **recurrencia** (`recurrencia: "mensual"`) va en el descriptor de `CATEGORIAS`, nunca dentro de
+`PRECIOS_FIJOS` ni `SERVICIOS_BASE`: `getConfig()` hace un merge superficial por clave y
+`aplicarAjustes()` persiste el `CONFIG` entero, así que un campo nuevo ahí dentro se perdería en
+cualquier navegador con precios guardados y el servicio volvería a «único» sin avisar.
+
+Si se añade un servicio con niveles, no hay que tocar nada más: la lista del modal de ajustes se
+deriva de `CATEGORIAS`.

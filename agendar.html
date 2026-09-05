@@ -1,217 +1,167 @@
 <!DOCTYPE html>
-<html class="dark" lang="es">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendar Reunión Gratuita - DAK Agency</title>
-    <meta name="description" content="Agenda una reunión gratuita de 60 minutos con DAK Agency vía Google Meet. Revisamos tu proyecto y te damos un plan personalizado.">
-
-    <!-- Open Graph / FB Pixel ready -->
-    <meta property="og:title" content="Agendar Reunión Gratuita - DAK Agency">
-    <meta property="og:description" content="Reunión de 60 min por Google Meet. Gratis. Zona horaria Lima, Perú.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://plan.dakagency.net/agendar.html">
-    <meta property="og:image" content="https://dakagency.net/assets/og-agendar.png">
-    <meta property="og:locale" content="es_PE">
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Agendar Reunión - DAK Agency">
-    <meta name="twitter:description" content="Reunión gratuita de 60 min por Google Meet.">
-
+    <title>Agendar una reunión con DAK Agency</title>
+    <meta name="description" content="Elegí un horario y conversemos 60 minutos por Google Meet, sin coste.">
+    <meta name="theme-color" content="#E4E0EB">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="shortcut icon" href="assets/favicon.svg">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=7">
-    <link rel="stylesheet" href="css/agendar.css?v=1">
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "surface-bright": "#322939",
-                        "surface-variant": "#2b2232",
-                        "tertiary": "#85b9ff",
-                        "secondary": "#5ff8f8",
-                        "tertiary-dim": "#5ca0f3",
-                        "surface-dim": "#120c16",
-                        "surface": "#120c16",
-                        "secondary-container": "#006a6a",
-                        "primary-dim": "#b023ff",
-                        "outline-variant": "#4d4552",
-                        "on-surface": "#f9edfd",
-                        "outline": "#7b7280",
-                        "surface-container-high": "#241d2b",
-                        "surface-container-lowest": "#000000",
-                        "surface-tint": "#d692ff",
-                        "on-surface-variant": "#b2a7b6",
-                        "background": "#120c16",
-                        "on-error-container": "#ffb2b9",
-                        "surface-container-highest": "#2b2232",
-                        "primary-container": "#ce7eff",
-                        "on-primary-container": "#3a005a",
-                        "surface-container": "#1e1724",
-                        "inverse-primary": "#9400dc",
-                        "error": "#ff6e84",
-                        "primary": "#d692ff",
-                        "error-dim": "#d73357",
-                        "surface-container-low": "#17111c",
-                    },
-                    fontFamily: {
-                        headline: ["Inter", "sans-serif"],
-                        body: ["Inter", "sans-serif"],
-                        label: ["Inter", "sans-serif"],
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="preload" href="assets/fuentes/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/tokens.css?v=9">
+    <link rel="stylesheet" href="css/base.css?v=9">
+    <link rel="stylesheet" href="css/cotizacion.css?v=9">
 </head>
 
-<body class="bg-[#030106] text-on-surface font-body overflow-hidden min-h-screen">
+<body>
+<!--
+  Misma superficie que el overlay de la calculadora, mismo markup y mismo módulo de
+  calendario. Existe aparte porque está enlazada directamente desde la web principal,
+  el chat widget y el pie del blog, así que hay prospectos que la ven sin pasar nunca
+  por la calculadora.
+-->
+    <!-- Iconos: SVG dibujados, un solo grosor de trazo. Sustituyen a la fuente
+         Material Symbols (cientos de KB para quince glifos, y las ligaduras se
+         veian como palabras sueltas antes de que cargara) y a los emoji, que no
+         son un sistema de iconos. -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+      <defs>
+        <!-- Mordida de tinta: desplaza el trazo lo justo para que el borde del
+             sello no sea perfecto, como cuando el tampon pisa el papel. Vive
+             tambien aqui porque un filter: url(#tinta) sin destino hace que el
+             elemento no se pinte en absoluto, no que se pinte sin filtro. -->
+        <filter id="tinta" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="ruido"/>
+          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></symbol>
+        <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6 18 18M18 6 6 18"/></symbol>
+        <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+        <symbol id="i-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="i-arriba" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+        <symbol id="i-izq" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+        <symbol id="i-der" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+        <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+        <symbol id="i-correo" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/></symbol>
+        <symbol id="i-candado" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></symbol>
+        <symbol id="i-salir" viewBox="0 0 24 24"><path d="M9.5 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3.5M16 16.5 20.5 12 16 7.5M20.5 12H10"/></symbol>
+        <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.5v5M12 7.8v.4"/></symbol>
+        <symbol id="i-documento" viewBox="0 0 24 24"><path d="M6 3h8l4.5 4.5V21H6z"/><path d="M14 3v5h4.5M9 12.5h6M9 16.5h4"/></symbol>
+        <symbol id="i-vacio" viewBox="0 0 24 24"><path d="M6 3h8l4.5 4.5V21H6z"/><path d="M14 3v5h4.5"/></symbol>
+        <symbol id="i-aviso" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.3"/></symbol>
+        <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 11 5.5-3v8l-5.5-3z"/></symbol>
+        <symbol id="i-diseno" viewBox="0 0 24 24"><path d="M4 20 9 9l5 5-10 6z"/><path d="m12 6.5 5.5 5.5M14.5 4l5.5 5.5-2.5 2.5L12 6.5z"/></symbol>
+        <symbol id="i-web" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 9h18M6.5 6.7h.4M9 6.7h.4"/></symbol>
+        <symbol id="i-marketing" viewBox="0 0 24 24"><path d="M4 20V13M9.5 20V8M15 20v-8.5M20.5 20V4"/></symbol>
+        <symbol id="i-automatizacion" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 4v4M8.5 13v1.5M15.5 13v1.5"/></symbol>
+        <symbol id="i-libre" viewBox="0 0 24 24"><path d="M4 20h16M5.5 15.5 15 6a2.1 2.1 0 0 1 3 3l-9.5 9.5-4 1 1-4z"/></symbol>
+      </defs>
+    </svg>
 
-    <!-- Ambient orbs -->
-    <div class="orb w-[500px] h-[500px] bg-primary-dim top-[-100px] left-[-10%]" aria-hidden="true"></div>
-    <div class="orb w-[600px] h-[600px] bg-secondary bottom-[-200px] right-[-10%]" aria-hidden="true"></div>
-    <div class="bg-grid fixed inset-0 z-0" aria-hidden="true"></div>
-
-    <!-- Full-Screen Scheduling Page -->
-    <div class="relative z-10 w-full h-screen flex flex-col">
-
-        <!-- Header -->
-        <header class="fixed top-0 w-full z-20 bg-[#030106]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(176,36,255,0.15)]">
-            <div class="flex justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full max-w-6xl mx-auto">
-                <div class="flex items-center gap-4 sm:gap-5">
-                    <div class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary-dim/10 text-primary-dim">
-                        <span class="material-symbols-outlined text-2xl">calendar_today</span>
-                    </div>
-                    <div>
-                        <h1 class="font-black tracking-tight text-xl sm:text-2xl text-white">Agendar reunión</h1>
-                        <div class="flex gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
-                            <span class="cita-badge">60 min</span>
-                            <span class="cita-badge">Google Meet</span>
-                            <span class="cita-badge cita-badge--teal">Gratis</span>
-                            <span class="cita-badge">Lambayeque, PE</span>
-                        </div>
-                    </div>
+    <!-- Lleva el mismo id que el overlay de la calculadora: js/calendario.js y
+         js/agendar.js se dirigen a el por ese nombre en las dos superficies. -->
+    <div class="agenda" id="cita-overlay">
+        <header class="cabecera">
+            <div class="cabecera__fila">
+                <div class="cabecera__marca">
+                    <img class="cabecera__logo" src="assets/logo.svg" alt="DAK Agency">
+                    <span class="cabecera__sep" aria-hidden="true"></span>
+                    <span class="cabecera__titulo">Agenda</span>
                 </div>
-                <a href="index.html" id="btn-back" class="p-2.5 text-on-surface-variant hover:bg-white/5 transition-colors rounded-full active:scale-95" title="Volver al calculador" aria-label="Volver">
-                    <span class="material-symbols-outlined">close</span>
-                </a>
+                <button type="button" id="cita-cerrar-btn" class="boton-icono" aria-label="Cerrar">
+                    <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
+                </button>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="cita-main" id="agendar-main">
-            <!-- Loading -->
-            <div id="agendar-loading" class="w-full flex flex-col items-center justify-center py-20">
-                <div class="cita-spinner-lg"></div>
-                <span class="text-sm text-on-surface-variant mt-4">Cargando disponibilidad...</span>
+        <main class="agenda__cuerpo">
+            <!-- Membrete, igual que la hoja de cotizacion. Antes aqui habia un titulo
+                 y una linea con cuatro datos pegados y con una clase que no existia en
+                 el CSS, asi que se pintaba como parrafo suelto. Un documento presenta
+                 sus datos en pares tabulados. -->
+            <div class="agenda__membrete">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
+                <h2 id="cita-titulo" class="hoja__titulo">Reunión de diagnóstico</h2>
+                <dl class="membrete">
+                    <div class="membrete__par"><dt>Duración</dt><dd>60 minutos</dd></div>
+                    <div class="membrete__par"><dt>Modalidad</dt><dd>Google Meet</dd></div>
+                    <div class="membrete__par"><dt>Horario</dt><dd>Lambayeque (GMT-5)</dd></div>
+                    <div class="membrete__par"><dt>Coste</dt><dd>Sin coste</dd></div>
+                </dl>
             </div>
 
-            <!-- Error -->
-            <div id="agendar-error" class="w-full" style="display:none">
-                <div class="glass-panel p-8 rounded-2xl border border-white/5 text-center max-w-md mx-auto">
-                    <span class="material-symbols-outlined text-4xl text-error mb-3 block">error_outline</span>
-                    <p class="text-sm text-error" id="agendar-error-msg">No se pudo cargar la disponibilidad.</p>
-                    <button type="button" id="agendar-retry-btn" class="mt-4 px-5 py-2 text-xs font-bold uppercase tracking-widest border border-outline-variant/30 text-on-surface-variant hover:text-white hover:border-primary-dim/50 rounded-lg transition-all">Reintentar</button>
-                </div>
+            <p id="cita-loading" class="hoja__vacia">Cargando disponibilidad…</p>
+
+            <div id="cita-error" class="hoja__vacia" hidden>
+                <p class="nota nota--error" id="cita-error-msg">No se pudo cargar la disponibilidad.</p>
+                <button type="button" id="cita-retry-btn" class="accion accion--segunda agenda__reintentar">Reintentar</button>
             </div>
 
-            <!-- Left Column: Calendar + Form -->
-            <section id="agendar-left-col" class="w-full lg:w-[55%] space-y-6" style="display:none">
-                <!-- Calendar -->
-                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 shadow-2xl">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold tracking-tight" id="agendar-month-title">—</h3>
-                        <div class="flex gap-3">
-                            <button type="button" id="agendar-prev-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-                                <span class="material-symbols-outlined text-sm">chevron_left</span>
-                            </button>
-                            <button type="button" id="agendar-next-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-                                <span class="material-symbols-outlined text-sm">chevron_right</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2 text-center text-on-surface-variant text-[11px] font-bold uppercase tracking-widest mb-3">
-                        <div>Lu</div><div>Ma</div><div>Mi</div><div>Ju</div><div>Vi</div><div class="text-white/20">Sá</div><div class="text-white/20">Do</div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="agendar-cal-grid"></div>
-                </div>
+            <section id="cita-left-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">1</span><span>Elegí el día</span><span class="agenda__filete" aria-hidden="true"></span></h3>
 
-                <!-- Contact Details -->
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-primary-dim">Detalles del contacto</h3>
-                    <div class="space-y-3">
-                        <input id="agendar-nombre" type="text" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="Tu nombre completo" maxlength="100">
-                        <input id="agendar-email" type="email" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="tu@email.com">
-                        <textarea id="agendar-mensaje" rows="2" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm resize-none" placeholder="Cuéntanos brevemente sobre tu proyecto (opcional)"></textarea>
+                <div class="agenda__mes">
+                    <p class="agenda__mes-nombre" id="cita-month-title">—</p>
+                    <div class="agenda__nav">
+                        <button type="button" id="cita-prev-month" class="boton-icono" aria-label="Mes anterior">
+                            <svg class="icono" aria-hidden="true"><use href="#i-izq"></use></svg>
+                        </button>
+                        <button type="button" id="cita-next-month" class="boton-icono" aria-label="Mes siguiente">
+                            <svg class="icono" aria-hidden="true"><use href="#i-der"></use></svg>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Services summary (populated via URL params) -->
-                <div id="agendar-services" class="space-y-3" style="display:none">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-primary-dim">Servicios seleccionados</h3>
-                    <div id="agendar-services-list" class="space-y-1"></div>
-                    <div class="flex justify-between items-center pt-2 border-t border-outline-variant/10">
-                        <span class="text-xs font-bold uppercase text-on-surface-variant">Total estimado</span>
-                        <span id="agendar-services-total" class="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-dim to-secondary">S/ 0</span>
+                <!-- Tabla reglada, como el calendario de un talonario: las celdas
+                     sombreadas son los dias cerrados y las blancas los que quedan
+                     libres. Es la lectura de un impreso, no un mosaico de botones. -->
+                <div class="agenda__tabla">
+                    <div class="agenda__dias-rotulo" aria-hidden="true">
+                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
                     </div>
+                    <div class="agenda__rejilla" id="cita-cal-grid"></div>
+                </div>
+
+            </section>
+
+            <section id="cita-right-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">2</span><span>Elegí la hora</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div id="cita-slots-container" class="agenda__horas-caja">
+                    <p class="nota">Elegí un día en el calendario.</p>
+                </div>
+                <div id="cita-summary-card" class="aviso" hidden>
+                    <svg class="icono" aria-hidden="true"><use href="#i-check"></use></svg>
+                    <span id="cita-summary-text">—</span>
                 </div>
             </section>
 
-            <!-- Right Column: Time Slots -->
-            <section id="agendar-right-col" class="w-full lg:w-[45%] flex flex-col" style="display:none">
-                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 flex-1 flex flex-col">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold tracking-tight mb-1">Horarios disponibles</h3>
-                        <p class="text-xs font-light text-on-surface-variant italic">Zona horaria: America/Lima · Lambayeque, PE (GMT-5)</p>
-                    </div>
-                    <div id="agendar-slots-container" class="space-y-6 overflow-y-auto pr-2 sidebar-scroll flex-1">
-                        <p class="text-sm text-on-surface-variant text-center py-8 opacity-50">← Selecciona un día en el calendario</p>
-                    </div>
-                    <!-- Summary Selection Card -->
-                    <div id="agendar-summary-card" class="mt-auto pt-6 border-t border-white/10" style="display:none">
-                        <div class="bg-secondary-dim/10 rounded-xl p-4 flex items-center gap-4 border border-secondary-dim/20">
-                            <div class="w-10 h-10 rounded-lg bg-secondary-dim flex items-center justify-center text-[#004747] flex-shrink-0">
-                                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">schedule</span>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.1em] text-secondary-dim">Reunión seleccionada</p>
-                                <p class="text-sm font-bold text-white" id="agendar-summary-text">—</p>
-                            </div>
-                        </div>
-                    </div>
+            <section id="cita-datos-col" class="agenda__panel agenda__panel--ancho" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">3</span><span>Tus datos</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div class="agenda__datos">
+                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
+                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
+                    <label class="campo__rotulo" for="cita-email">Tu email</label>
+                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
                 </div>
             </section>
 
-            <!-- Confirmation Screen -->
-            <div id="agendar-confirmacion" class="w-full" style="display:none">
-                <div class="glass-panel p-8 sm:p-10 rounded-2xl border border-white/5 text-center max-w-lg mx-auto">
-                    <div id="agendar-resumen"></div>
-                </div>
+            <div id="cita-confirmacion" class="agenda__panel agenda__panel--constancia" hidden>
+                <div id="cita-resumen"></div>
             </div>
         </main>
 
-        <!-- Footer Actions -->
-        <footer class="fixed bottom-0 w-full z-20 bg-[#030106]/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
-            <div class="flex justify-between items-center gap-4 px-4 sm:px-12 py-4 sm:py-5 w-full max-w-6xl mx-auto">
-                <a href="https://dakagency.net" class="text-on-surface-variant/50 hover:text-on-surface-variant text-[10px] uppercase tracking-widest transition-colors hidden sm:block">dakagency.net</a>
-                <div class="flex items-center gap-4 ml-auto">
-                    <a href="index.html" id="agendar-btn-cancel" class="text-on-surface-variant hover:text-white px-4 sm:px-6 py-2 font-light text-sm uppercase tracking-widest transition-all active:scale-[0.98]">
-                        Cancelar
-                    </a>
-                    <button type="button" id="agendar-btn-confirmar" class="bg-primary-dim text-white rounded-lg px-6 sm:px-8 py-3 font-bold text-xs sm:text-sm uppercase tracking-widest shadow-[0_8px_32px_rgba(176,36,255,0.28)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-                        Confirmar reunión
-                    </button>
-                </div>
-            </div>
+        <footer class="agenda__pie">
+            <button type="button" id="cita-btn-cancelar" class="accion accion--segunda">Cancelar</button>
+            <button type="button" id="cita-btn-confirmar" class="accion accion--principal" disabled>Confirmar reunión</button>
         </footer>
     </div>
 
-    <script src="js/agendar.js?v=1"></script>
+    <script src="js/comun.js?v=9"></script>
+    <script src="js/calendario.js?v=9"></script>
+    <script src="js/agendar.js?v=9"></script>
 </body>
+
 </html>

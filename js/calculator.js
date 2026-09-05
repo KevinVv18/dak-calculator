@@ -3,29 +3,8 @@
 //  Single-page layout with sticky sidebar
 // ══════════════════════════════════════════
 
-// ── Helpers ──
-function sanitizeHTML(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
-function validarEmail(email) {
-    if (!email || email.length > 254) return false;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-}
-
-// ── Client-side Anti-Spam ──
-const COOLDOWNS = { email: 0, cita: 0 };
-const COOLDOWN_DURATION = 30000; // 30 seconds between sends
-function isCooldown(key) {
-    if (Date.now() < COOLDOWNS[key]) return true;
-    COOLDOWNS[key] = Date.now() + COOLDOWN_DURATION;
-    return false;
-}
-
 const CONFIG_KEY = 'dak-calculator-config';
-const CONFIG_VERSION = 5;
+const CONFIG_VERSION = 6; // subir al cambiar la estructura del config. 6 = split pago unico / mensual.
 
 function getConfig() {
     const defaults = {
@@ -60,7 +39,6 @@ const CONFIG = getConfig();
 const NIVELES = ['basico', 'avanzado'];
 const NIVELES_LABEL = { basico: 'Básico', avanzado: 'Avanzado' };
 const PERFIL_LABEL = { bajo: 'Inicial', medio: 'Crecimiento', alto: 'Corporativo' };
-const fmt = n => 'S/ ' + new Intl.NumberFormat('es-PE').format(Math.round(n));
 
 // Category icons (Material Symbols)
 const CAT_ICONS = {
@@ -72,6 +50,21 @@ const CAT_ICONS = {
     'personalizado': 'edit_note',
 };
 
+// Perfil de cliente. Es un dato de negocio, no de presentacion: vivia en un <select>
+// oculto dentro de la seccion de admin, asi que dejaba de existir si ese bloque no se
+// renderizaba. Ahora el DOM lo refleja, no lo posee.
+const PERFILES_VALIDOS = Object.keys(PERFILES_CLIENTE);
+let perfilActual = 'bajo';
+function fijarPerfil(p) {
+    perfilActual = PERFILES_VALIDOS.includes(p) ? p : 'bajo';
+    return perfilActual;
+}
+
+// Qué está elegido y qué recargos están activos. Antes había que preguntárselo al
+// DOM leyendo checkboxes ocultos dentro de cada tarjeta.
+const seleccionados = new Set();
+const extrasActivos = new Set();
+
 let itemsPersonalizados = [];
 let isAdmin = sessionStorage.getItem('dak-admin') === 'true';
 
@@ -81,44 +74,54 @@ let isAdmin = sessionStorage.getItem('dak-admin') === 'true';
 
 function actualizarVistaAdmin() {
     isAdmin = sessionStorage.getItem('dak-admin') === 'true';
-    const btnAdmin = document.getElementById('btn-admin-login');
-    const btnAjustes = document.getElementById('btn-ajustes');
-    const btnLogout = document.getElementById('btn-logout');
-    const lockIcon = document.getElementById('icon-lock-aprox');
-    const tooltip = document.getElementById('tooltip-aprox');
-    const perfilSection = document.getElementById('perfil-section');
-    const rowPerfil = document.getElementById('row-perfil');
+    // El atributo hidden en vez de style.display: se lee en el HTML, lo respeta el
+    // lector de pantalla, y no depende de acertar el display original del elemento.
+    const mostrar = (id, visible) => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !visible;
+    };
+    mostrar('btn-admin-login', !isAdmin);
+    mostrar('btn-ajustes', isAdmin);
+    mostrar('btn-logout', isAdmin);
+    mostrar('icon-lock-aprox', !isAdmin);
+    // El candado de «cotización oficial» solo lo ve quien puede usarlo. Un control
+    // con llave delante de un prospecto es ruido, no seguridad.
+    mostrar('label-aprox', isAdmin);
+    mostrar('tooltip-aprox', false);
+    mostrar('perfil-section', isAdmin);
+    mostrar('row-perfil', isAdmin);
+    if (isAdmin) { renderPerfiles(); cerrarModalLoginAdmin(); }
+    else fijarPerfil('bajo');
+    actualizarHoja();
+}
 
-    if (isAdmin) {
-        if (btnAdmin) btnAdmin.style.display = 'none';
-        if (btnAjustes) btnAjustes.style.display = 'flex';
-        if (btnLogout) btnLogout.style.display = 'flex';
-        if (lockIcon) lockIcon.style.display = 'none';
-        if (tooltip) tooltip.classList.add('hidden');
-        if (perfilSection) perfilSection.style.display = '';
-        if (rowPerfil) rowPerfil.style.display = '';
-        cerrarModalLoginAdmin();
-    } else {
-        if (btnAdmin) btnAdmin.style.display = 'flex';
-        if (btnAjustes) btnAjustes.style.display = 'none';
-        if (btnLogout) btnLogout.style.display = 'none';
-        if (lockIcon) lockIcon.style.display = 'inline';
-        if (tooltip) tooltip.classList.remove('hidden');
-        if (perfilSection) perfilSection.style.display = 'none';
-        if (rowPerfil) rowPerfil.style.display = 'none';
-        document.getElementById('perfil-cliente').value = 'bajo';
-    }
-    actualizarSidebar();
+// config/credentials.js esta en .gitignore y no se despliega: en produccion da 404
+// siempre. Cargarlo con un <script> fijo dejaba ese error en la consola de todos los
+// prospectos para una funcion que solo usa el equipo. Se carga al abrir el modal, una
+// sola vez, y si no esta el login simplemente no valida.
+let cargaAdminCredenciales = null;
+function cargarCredencialesAdmin() {
+    if (cargaAdminCredenciales) return cargaAdminCredenciales;
+    cargaAdminCredenciales = new Promise(resolve => {
+        if (typeof ADMIN_CREDENTIALS !== 'undefined') return resolve(true);
+        const s = document.createElement('script');
+        s.src = 'config/credentials.js?v=6';
+        s.onload = () => resolve(true);
+        s.onerror = () => resolve(false);   // 404 esperado en produccion
+        document.head.appendChild(s);
+    });
+    return cargaAdminCredenciales;
 }
 
 function abrirModalLoginAdmin() {
     const modal = document.getElementById('modal-login-admin');
     if (!modal) return;
+    cargarCredencialesAdmin();
     modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('modal-open');
+    modal.hidden = false;
     document.getElementById('admin-user').value = '';
     document.getElementById('admin-pass').value = '';
-    document.getElementById('admin-login-error').style.display = 'none';
+    document.getElementById('admin-login-error').hidden = true;
     document.getElementById('admin-user').focus();
 }
 
@@ -126,7 +129,7 @@ function cerrarModalLoginAdmin() {
     const modal = document.getElementById('modal-login-admin');
     if (modal) {
         modal.setAttribute('aria-hidden', 'true');
-        modal.classList.remove('modal-open');
+        modal.hidden = true;
     }
 }
 
@@ -136,16 +139,17 @@ function logoutAdmin() {
     cerrarModalAjustes();
 }
 
-function procesarLoginAdmin() {
+async function procesarLoginAdmin() {
+    await cargarCredencialesAdmin();
     const user = document.getElementById('admin-user').value.trim();
     const pass = document.getElementById('admin-pass').value.trim();
     const errEl = document.getElementById('admin-login-error');
     if (typeof ADMIN_CREDENTIALS !== 'undefined' && user === ADMIN_CREDENTIALS.user && pass === ADMIN_CREDENTIALS.pass) {
         sessionStorage.setItem('dak-admin', 'true');
-        errEl.style.display = 'none';
+        errEl.hidden = true;
         actualizarVistaAdmin();
     } else {
-        errEl.style.display = 'block';
+        errEl.hidden = false;
     }
 }
 
@@ -164,540 +168,543 @@ function mostrarErrorToast(mensaje) {
 }
 
 // ══════════════════════════════════════════
-//  PERFIL SELECTION
+//  CATÁLOGO — el índice de partidas
 // ══════════════════════════════════════════
 
-function seleccionarPerfil(perfil) {
-    document.getElementById('perfil-cliente').value = perfil;
-    document.querySelectorAll('.perfil-btn').forEach(b =>
-        b.classList.toggle('perfil-btn--activo', b.dataset.perfil === perfil)
-    );
-    actualizarSidebar();
-}
+const esMensual = s => (s && s.recurrencia === 'mensual');
 
-// ══════════════════════════════════════════
-//  RENDER SERVICES (replaces wizard Step 2)
-// ══════════════════════════════════════════
+// El sufijo es la unidad del importe, no un pie de página: va pegado a la cifra.
+const conUnidad = (importe, mensual) =>
+    mensual ? `${fmt(importe)}<span class="mes"> /mes</span>` : fmt(importe);
 
-function renderServicios() {
-    const container = document.getElementById('servicios-container');
-    container.innerHTML = '';
+function renderPartida(s) {
+    const mensual = esMensual(s);
+    const desc = SERVICE_INFO[s.key] || '';
+    let importe;
 
-    const isMobile = window.innerWidth < 1024;
-
-    CATEGORIAS.forEach(cat => {
-        const section = document.createElement('section');
-
-        const icon = CAT_ICONS[cat.id] || 'category';
-        const showToggle = cat.id !== 'personalizado' && cat.servicios;
-        const startCollapsed = isMobile; // mobile = collapsed, desktop = expanded
-
-        let headerHTML = `
-            <div class="cat-header flex items-center gap-3 mb-5${showToggle ? ' cursor-pointer select-none' : ''}" ${showToggle ? `data-cat-toggle="${cat.id}"` : ''}>
-                <span class="material-symbols-outlined text-secondary text-2xl">${icon}</span>
-                <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-white flex-1">${sanitizeHTML(cat.label.replace(/^[\p{Emoji}\s]+/u, ''))}</h2>
-                ${cat.badge ? `<span class="cat-section-badge">${sanitizeHTML(cat.badge)}</span>` : ''}
-                ${showToggle ? `<span class="cat-toggle-icon material-symbols-outlined text-on-surface-variant text-xl transition-transform">${startCollapsed ? 'add' : 'remove'}</span>` : ''}
-            </div>`;
-
-        if (cat.id === 'personalizado') {
-            section.innerHTML = headerHTML + renderPanelPersonalizado();
-        } else if (cat.servicios) {
-            const cards = cat.servicios.map(s =>
-                s.tipo === 'nivel' ? renderCardNivel(s) : renderCardFijo(s)
-            ).join('');
-            section.innerHTML = headerHTML + `<div class="cat-body${startCollapsed ? ' cat-body--collapsed' : ''}" id="cat-body-${cat.id}"><div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div></div>`;
-        }
-
-        container.appendChild(section);
-    });
-
-    // Toggle: works on all viewports
-    document.querySelectorAll('[data-cat-toggle]').forEach(header => {
-        header.addEventListener('click', () => {
-            const catId = header.dataset.catToggle;
-            const body = document.getElementById(`cat-body-${catId}`);
-            const toggleIcon = header.querySelector('.cat-toggle-icon');
-            if (!body) return;
-            const isNowCollapsed = body.classList.toggle('cat-body--collapsed');
-            if (toggleIcon) toggleIcon.textContent = isNowCollapsed ? 'add' : 'remove';
-        });
-    });
-
-    // On breakpoint change, reset all categories to default state for that viewport
-    if (!window._catResizeListenerAdded) {
-        window._catResizeListenerAdded = true;
-        let lastMobile = window.innerWidth < 1024;
-        window.addEventListener('resize', () => {
-            const nowMobile = window.innerWidth < 1024;
-            if (nowMobile === lastMobile) return; // no breakpoint crossing
-            lastMobile = nowMobile;
-            document.querySelectorAll('[data-cat-toggle]').forEach(header => {
-                const catId = header.dataset.catToggle;
-                const body = document.getElementById(`cat-body-${catId}`);
-                const toggleIcon = header.querySelector('.cat-toggle-icon');
-                if (!body) return;
-                if (nowMobile) {
-                    body.classList.add('cat-body--collapsed');
-                    if (toggleIcon) toggleIcon.textContent = 'add';
-                } else {
-                    body.classList.remove('cat-body--collapsed');
-                    if (toggleIcon) toggleIcon.textContent = 'remove';
-                }
-            });
-        });
+    if (s.tipo === 'nivel') {
+        const desde = CONFIG.serviciosBase[s.key]?.basico ?? 0;
+        importe = `<span class="partida__importe"><span class="partida__desde">desde</span>${conUnidad(desde, mensual)}</span>`;
+    } else {
+        importe = `<span class="partida__importe">${conUnidad(CONFIG.preciosFijos[s.key]?.precio ?? 0, mensual)}</span>`;
     }
 
-
-    // Attach event listeners
-    attachServiceListeners();
-    attachCustomListeners();
-
-    // Info tooltips
-    setupInfoTooltips();
-}
-
-function renderCardNivel(s) {
-    const precios = CONFIG.serviciosBase[s.key] ?? {};
-    const desde = precios.basico ?? 0;
-    const labels = s.tierLabels || {};
-    const nivelBtns = NIVELES.map(n => `
-        <button type="button" class="nivel-btn${n === 'basico' ? ' activo' : ''}" data-nivel="${n}">
-            <span class="nivel-btn-name">${labels[n] || NIVELES_LABEL[n]}</span>
-            <span class="nivel-btn-price">${fmt(precios[n] ?? 0)}</span>
-        </button>`).join('');
+    // La primera línea de la descripción sirve de pie: se lee siempre, también en
+    // táctil. El tooltip anterior era solo hover y en un móvil no existía.
+    const pie = desc ? sanitizeHTML(desc.split('\n')[0]) : '';
 
     return `
-    <div class="svc-card" id="card-${s.key}" data-key="${s.key}">
-        <div class="svc-card-header">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <input type="checkbox" id="chk-${s.key}" class="svc-checkbox" tabindex="-1">
-                <div class="min-w-0">
-                    <span class="text-sm font-semibold text-on-surface svc-card-name">${sanitizeHTML(s.label)} ${renderInfoIcon(s.key)}</span>
-                    <span class="text-[11px] text-on-surface-variant block mt-0.5">desde ${fmt(desde)} / ${s.unidad || 'unidad'}</span>
-                </div>
+    <div class="partida" id="p-${s.key}" data-key="${s.key}" role="button" tabindex="0" aria-pressed="false">
+        <span class="partida__marca">${icono('i-check')}</span>
+        <span class="partida__nombre">${sanitizeHTML(s.label)}${mensual ? ' <span class="etiqueta-mes">al mes</span>' : ''}</span>
+        ${importe}
+        ${pie ? `<span class="partida__pie">${pie}</span>` : ''}
+    </div>
+    <div class="detalle" id="d-${s.key}" hidden>${renderDetalle(s)}</div>`;
+}
+
+function renderDetalle(s) {
+    const partes = [];
+
+    if (s.tipo === 'nivel') {
+        const precios = CONFIG.serviciosBase[s.key] ?? {};
+        const etiquetas = s.tierLabels || {};
+        const mensual = esMensual(s);
+
+        partes.push(`
+        <div class="campo">
+            <span class="campo__rotulo">Cantidad</span>
+            <div class="contador">
+                <button type="button" class="contador__boton" data-paso="-1" data-key="${s.key}" aria-label="Quitar uno">${icono('i-menos', 'icono--sm')}</button>
+                <input type="number" class="contador__valor" id="q-${s.key}" data-key="${s.key}" value="1" min="1" aria-label="Cantidad de ${sanitizeHTML(s.label)}">
+                <button type="button" class="contador__boton" data-paso="1" data-key="${s.key}" aria-label="Añadir uno">${icono('i-mas', 'icono--sm')}</button>
             </div>
-            <span class="text-xs font-bold text-secondary whitespace-nowrap">${fmt(precios.basico ?? 0)} - ${fmt(precios.avanzado ?? 0)}</span>
+            <input type="hidden" id="qty-${s.key}" value="1">
+        </div>`);
+
+        partes.push(`
+        <div class="campo">
+            <span class="campo__rotulo">Nivel</span>
+            <div class="niveles" role="group" aria-label="Nivel de ${sanitizeHTML(s.label)}">
+                ${NIVELES.map(n => `
+                <button type="button" class="nivel${n === 'basico' ? ' nivel--activo' : ''}" data-nivel="${n}" data-key="${s.key}" aria-pressed="${n === 'basico'}">
+                    <span class="nivel__nombre">${sanitizeHTML(etiquetas[n] || NIVELES_LABEL[n])}</span>
+                    <span class="nivel__precio">${conUnidad(precios[n] ?? 0, mensual)}</span>
+                </button>`).join('')}
+            </div>
+            <input type="hidden" id="lvl-${s.key}" value="basico">
+        </div>`);
+    }
+
+    // Segunda línea de la descripción, cuando la hay (el nivel avanzado)
+    const desc = SERVICE_INFO[s.key] || '';
+    const resto = desc.split('\n').slice(1).join(' ');
+    if (resto) partes.push(`<p class="nota" style="text-align:left">${sanitizeHTML(resto)}</p>`);
+
+    // El coste que aparece más tarde se dice ahora
+    const aviso = typeof AVISO_RECURRENTE !== 'undefined' ? AVISO_RECURRENTE[s.key] : null;
+    if (aviso) partes.push(`<p class="aviso">${icono('i-aviso', 'icono--sm')}<span>${sanitizeHTML(aviso)}</span></p>`);
+
+    return partes.join('');
+}
+
+function renderLibre() {
+    return `
+    <div class="libre">
+        <div class="libre__forma">
+            <input type="text" id="custom-nombre" class="campo-texto campo-texto--ancho" placeholder="¿Qué necesitás que no esté en la lista?" maxlength="100">
+            <input class="campo-texto ajuste__campo" type="number" id="custom-precio" class="campo-texto campo-texto--cifra" placeholder="S/" min="0">
+            <button type="button" id="btn-add-custom" class="accion accion--segunda">${icono('i-mas', 'icono--sm')} Añadir</button>
         </div>
-        <div class="svc-card-body" id="body-${s.key}">
-            <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Cantidad</span>
-                    <div class="stepper">
-                        <button type="button" class="stepper-btn stepper-minus" data-target="qty-${s.key}">−</button>
-                        <input type="number" class="stepper-input !bg-transparent !text-white !border-none !shadow-none !ring-0 focus:!ring-0" id="disp-${s.key}" value="1" min="1">
-                        <button type="button" class="stepper-btn stepper-plus" data-target="qty-${s.key}">+</button>
-                    </div>
-                    <input type="hidden" id="qty-${s.key}" value="1">
-                </div>
-                <div>
-                    <span class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold block mb-2">Tipo</span>
-                    <div class="nivel-seg" id="seg-${s.key}" data-key="${s.key}">${nivelBtns}</div>
-                    <input type="hidden" id="lvl-${s.key}" value="basico">
-                </div>
+        <div class="libre__forma" style="margin-top:var(--e2)">
+            <div class="niveles" role="group" aria-label="Cómo se paga">
+                <button type="button" class="nivel nivel--activo" data-libre-rec="unico" aria-pressed="true"><span class="nivel__nombre">Una vez</span></button>
+                <button type="button" class="nivel" data-libre-rec="mensual" aria-pressed="false"><span class="nivel__nombre">Cada mes</span></button>
             </div>
         </div>
+        <ul id="custom-items-list" style="margin-top:var(--e3)"></ul>
     </div>`;
 }
 
-function renderCardFijo(s) {
-    const precio = CONFIG.preciosFijos[s.key]?.precio ?? 0;
-    return `
-    <div class="svc-card" id="card-${s.key}" data-key="${s.key}">
-        <div class="svc-card-header">
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <input type="checkbox" id="chk-${s.key}" class="svc-checkbox" tabindex="-1">
-                <span class="text-sm font-semibold text-on-surface svc-card-name">${sanitizeHTML(s.label)} ${renderInfoIcon(s.key)}</span>
-            </div>
-            <span class="text-xs font-bold text-secondary whitespace-nowrap">${fmt(precio)}</span>
-        </div>
-    </div>`;
+function renderCatalogo() {
+    const cont = document.getElementById('catalogo');
+
+
+    cont.innerHTML = CATEGORIAS.map((cat, i) => {
+        const cuerpo = cat.tipo === 'personalizado'
+            ? renderLibre()
+            : (cat.servicios || []).map(renderPartida).join('');
+        // Solo la primera abierta, en cualquier tamaño. Las seis cabeceras dan el
+        // mapa del catálogo de un vistazo; treinta y cuatro filas seguidas, no.
+        const abierta = i === 0;
+        const n = (cat.servicios || []).length;
+        return `
+        <section class="seccion" data-cat="${cat.id}">
+            <button type="button" class="seccion__cabecera" data-cat="${cat.id}" aria-expanded="${abierta}" aria-controls="cuerpo-${cat.id}">
+                ${icono(cat.icono || 'i-documento', 'seccion__icono')}
+                <span class="seccion__nombre">${sanitizeHTML(cat.label)}</span>
+                <span class="seccion__filete"></span>
+                <span class="seccion__cuenta" id="cuenta-${cat.id}">${n ? n + ' servicios' : 'a medida'}</span>
+                ${icono(abierta ? 'i-arriba' : 'i-abajo', 'seccion__desplegar')}
+            </button>
+            <div class="seccion__cuerpo" id="cuerpo-${cat.id}" ${abierta ? '' : 'hidden'}>${cat.tipo === 'personalizado' ? '' : '<div class="columnas"><span></span><span>Concepto</span><span class="columnas__importe">Importe</span></div>'}${cuerpo}</div>
+        </section>`;
+    }).join('');
+
+    renderListaCustom();
+    actualizarCuentas();
 }
 
-function renderInfoIcon(key) {
-    if (!SERVICE_INFO[key]) return '';
-    return `<span class="svc-info-wrap"><span class="svc-info-icon">ⓘ</span></span>`;
-}
-
-function renderPanelPersonalizado() {
-    return `
-    <div class="svc-card" style="cursor:default">
-        <p class="text-xs text-on-surface-variant mb-4">Agregá cualquier servicio específico para este cliente.</p>
-        <div class="flex flex-col sm:flex-row gap-3">
-            <div class="flex-1">
-                <label class="text-[10px] uppercase font-bold text-on-surface-variant mb-1 block">Nombre del servicio</label>
-                <input type="text" id="custom-nombre" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="Ej. Retoque especial" maxlength="100">
-            </div>
-            <div class="w-full sm:w-28">
-                <label class="text-[10px] uppercase font-bold text-on-surface-variant mb-1 block">Precio (S/)</label>
-                <input type="number" id="custom-precio" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="0" min="0">
-            </div>
-            <div class="flex items-end">
-                <button type="button" id="btn-add-custom" class="w-full sm:w-auto px-5 py-2.5 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant hover:text-white hover:border-primary-dim/50 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1.5">
-                    <span class="material-symbols-outlined text-sm">add</span> Agregar
-                </button>
-            </div>
-        </div>
-        <ul class="custom-items-list" id="custom-items-list">
-            <li class="custom-empty">Ningún ítem agregado aún.</li>
-        </ul>
-    </div>`;
-}
-
-// ══════════════════════════════════════════
-//  EVENT LISTENERS
-// ══════════════════════════════════════════
-
-function attachServiceListeners() {
+// Una fila plegada tiene que llevar información, no solo un título
+function actualizarCuentas() {
     CATEGORIAS.forEach(cat => {
-        if (cat.id === 'personalizado' || !cat.servicios) return;
-        cat.servicios.forEach(s => {
-            const chk = document.getElementById(`chk-${s.key}`);
-            if (!chk) return;
-
-            const toggleCard = () => {
-                const card = document.getElementById(`card-${s.key}`);
-                const body = document.getElementById(`body-${s.key}`);
-                card?.classList.toggle('activo', chk.checked);
-                body?.classList.toggle('visible', chk.checked);
-                if (!chk.checked && s.tipo === 'nivel') {
-                    const disp = document.getElementById(`disp-${s.key}`);
-                    const qty = document.getElementById(`qty-${s.key}`);
-                    if (disp) disp.value = '1';
-                    if (qty) qty.value = '1';
-                }
-                actualizarSidebar();
-            };
-
-            chk.addEventListener('change', toggleCard);
-
-            const card = document.getElementById(`card-${s.key}`);
-            card?.addEventListener('click', e => {
-                if (e.target.closest('.svc-card-body')) return;
-                if (e.target.closest('.svc-info-wrap')) return;
-                chk.checked = !chk.checked;
-                toggleCard();
-            });
-        });
+        const el = document.getElementById('cuenta-' + cat.id);
+        if (!el) return;
+        const servicios = cat.servicios || [];
+        if (!servicios.length) {
+            el.textContent = itemsPersonalizados.length
+                ? itemsPersonalizados.length + ' añadidos'
+                : 'a medida';
+            return;
+        }
+        const elegidos = servicios.filter(s => seleccionados.has(s.key)).length;
+        el.textContent = elegidos
+            ? `${servicios.length} servicios · ${elegidos} elegido${elegidos > 1 ? 's' : ''}`
+            : `${servicios.length} servicios`;
     });
+}
 
-    // Event delegation for steppers and nivel buttons
-    const container = document.getElementById('servicios-container');
-    container.addEventListener('click', e => {
-        const stepperBtn = e.target.closest('.stepper-btn');
-        if (stepperBtn) {
-            const hidden = document.getElementById(stepperBtn.dataset.target);
-            const key = stepperBtn.dataset.target.replace('qty-', '');
-            const disp = document.getElementById(`disp-${key}`);
-            if (!hidden) return;
-            let val = parseInt(hidden.value) || 1;
-            val = stepperBtn.classList.contains('stepper-plus') ? val + 1 : Math.max(1, val - 1);
-            hidden.value = val;
-            if (disp) disp.value = val;
-            actualizarSidebar();
+// ══════════════════════════════════════════
+//  INTERACCIÓN
+// ══════════════════════════════════════════
+
+// La selección es estado, no una consulta al DOM. Antes vivía en un checkbox
+// oculto dentro de cada tarjeta y cuatro funciones distintas recorrían el árbol
+// para averiguar lo mismo.
+function fijarSeleccion(key, activo) {
+    if (activo) seleccionados.add(key); else seleccionados.delete(key);
+    const fila = document.getElementById('p-' + key);
+    const det = document.getElementById('d-' + key);
+    if (fila) {
+        fila.classList.toggle('partida--activa', activo);
+        fila.setAttribute('aria-pressed', String(activo));
+    }
+    if (det) det.hidden = !(activo && det.children.length > 0);
+    if (!activo) {
+        const q = document.getElementById('qty-' + key), v = document.getElementById('q-' + key);
+        if (q) q.value = '1';
+        if (v) v.value = '1';
+    }
+}
+
+function alternarPartida(key) {
+    fijarSeleccion(key, !seleccionados.has(key));
+    actualizarHoja();
+    actualizarCuentas();
+}
+
+function alternarSeccion(id) {
+    const cuerpo = document.getElementById('cuerpo-' + id);
+    const boton = document.querySelector('.seccion__cabecera[data-cat="' + id + '"]');
+    if (!cuerpo || !boton) return;
+    const abrir = cuerpo.hidden;
+    cuerpo.hidden = !abrir;
+    boton.setAttribute('aria-expanded', String(abrir));
+    // Apertura instantánea con fundido del contenido. Animar max-height está
+    // prohibido, y grid-template-rows cuesta lo mismo: los dos recalculan layout.
+    const uso = boton.querySelector('.seccion__desplegar use');
+    if (uso) uso.setAttribute('href', abrir ? '#i-arriba' : '#i-abajo');
+}
+
+// Los listeners se montan UNA vez sobre el contenedor. Pintar y escuchar son
+// cosas distintas: mezclarlas es como se acaban duplicando y el contador empieza
+// a subir de dos en dos.
+function montarListeners() {
+    const cont = document.getElementById('catalogo');
+
+    cont.addEventListener('click', e => {
+        const cabecera = e.target.closest('.seccion__cabecera');
+        if (cabecera) return alternarSeccion(cabecera.dataset.cat);
+
+        const paso = e.target.closest('.contador__boton');
+        if (paso) {
+            const key = paso.dataset.key;
+            const oculto = document.getElementById('qty-' + key);
+            const visible = document.getElementById('q-' + key);
+            const val = Math.max(1, (parseInt(oculto.value) || 1) + parseInt(paso.dataset.paso));
+            oculto.value = val; visible.value = val;
+            return actualizarHoja();
+        }
+
+        const nivel = e.target.closest('.nivel[data-key]');
+        if (nivel) {
+            const key = nivel.dataset.key;
+            nivel.parentElement.querySelectorAll('.nivel').forEach(b => {
+                b.classList.remove('nivel--activo');
+                b.setAttribute('aria-pressed', 'false');
+            });
+            nivel.classList.add('nivel--activo');
+            nivel.setAttribute('aria-pressed', 'true');
+            document.getElementById('lvl-' + key).value = nivel.dataset.nivel;
+            return actualizarHoja();
+        }
+
+        const rec = e.target.closest('[data-libre-rec]');
+        if (rec) {
+            rec.parentElement.querySelectorAll('.nivel').forEach(b => {
+                b.classList.remove('nivel--activo');
+                b.setAttribute('aria-pressed', 'false');
+            });
+            rec.classList.add('nivel--activo');
+            rec.setAttribute('aria-pressed', 'true');
             return;
         }
 
-        const nivelBtn = e.target.closest('.nivel-btn');
-        if (nivelBtn) {
-            const seg = nivelBtn.closest('.nivel-seg');
-            if (!seg) return;
-            seg.querySelectorAll('.nivel-btn').forEach(b => b.classList.remove('activo'));
-            nivelBtn.classList.add('activo');
-            const hidden = document.getElementById(`lvl-${seg.dataset.key}`);
-            if (hidden) { hidden.value = nivelBtn.dataset.nivel; actualizarSidebar(); }
+        if (e.target.closest('#btn-add-custom')) return agregarItemPersonalizado();
+
+        const quitar = e.target.closest('[data-quitar-custom]');
+        if (quitar) return eliminarItemPersonalizado(parseInt(quitar.dataset.quitarCustom));
+
+        // Usar los controles del detalle no debe alternar la partida
+        if (e.target.closest('.detalle')) return;
+        const fila = e.target.closest('.partida');
+        if (fila) alternarPartida(fila.dataset.key);
+    });
+
+    cont.addEventListener('keydown', e => {
+        const fila = e.target.closest('.partida');
+        if (fila && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            alternarPartida(fila.dataset.key);
         }
     });
 
-    // Manual stepper input
-    container.addEventListener('input', e => {
-        if (e.target.classList.contains('stepper-input')) {
-            const val = parseInt(e.target.value);
-            const key = e.target.id.replace('disp-', '');
-            const hidden = document.getElementById(`qty-${key}`);
-            if (hidden && !isNaN(val) && val > 0) {
-                hidden.value = val;
-            }
-            actualizarSidebar();
-        }
+    cont.addEventListener('input', e => {
+        if (!e.target.classList.contains('contador__valor')) return;
+        const val = parseInt(e.target.value);
+        const oculto = document.getElementById('qty-' + e.target.dataset.key);
+        if (oculto && !isNaN(val) && val > 0) oculto.value = val;
+        actualizarHoja();
     });
 
-    container.addEventListener('focusout', e => {
-        if (e.target.classList.contains('stepper-input')) {
-            let val = parseInt(e.target.value);
-            if (isNaN(val) || val < 1) val = 1;
-            e.target.value = val;
-            const key = e.target.id.replace('disp-', '');
-            const hidden = document.getElementById(`qty-${key}`);
-            if (hidden) hidden.value = val;
-            actualizarSidebar();
-        }
-    });
-}
-
-function attachCustomListeners() {
-    document.getElementById('btn-add-custom')?.addEventListener('click', agregarItemPersonalizado);
-    // Allow Enter key to add custom item
-    document.getElementById('custom-precio')?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') agregarItemPersonalizado();
-    });
-}
-
-function setupInfoTooltips() {
-    const globalTip = document.createElement('div');
-    globalTip.className = 'svc-info-tip';
-    globalTip.style.display = 'none';
-    document.body.appendChild(globalTip);
-
-    document.querySelectorAll('.svc-info-wrap').forEach(wrap => {
-        wrap.addEventListener('mouseenter', () => {
-            const key = wrap.closest('.svc-card')?.dataset.key;
-            const desc = SERVICE_INFO[key];
-            if (!desc) return;
-            globalTip.innerHTML = sanitizeHTML(desc).replace(/\n/g, '<br>');
-            const tipW = 240;
-            globalTip.style.width = tipW + 'px';
-            globalTip.style.display = 'block';
-            globalTip.style.opacity = '0';
-            const tipH = globalTip.offsetHeight;
-            const rect = wrap.getBoundingClientRect();
-            let left = rect.left + rect.width / 2 - tipW / 2;
-            let top = rect.top - tipH - 8;
-            if (left < 8) left = 8;
-            if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
-            if (top < 8) top = rect.bottom + 8;
-            globalTip.style.left = left + 'px';
-            globalTip.style.top = top + 'px';
-            globalTip.style.opacity = '1';
-            globalTip.style.visibility = 'visible';
-        });
-        wrap.addEventListener('mouseleave', () => {
-            globalTip.style.opacity = '0';
-            globalTip.style.visibility = 'hidden';
-            globalTip.style.display = 'none';
-        });
+    cont.addEventListener('focusout', e => {
+        if (!e.target.classList.contains('contador__valor')) return;
+        let val = parseInt(e.target.value);
+        if (isNaN(val) || val < 1) val = 1;
+        e.target.value = val;
+        const oculto = document.getElementById('qty-' + e.target.dataset.key);
+        if (oculto) oculto.value = val;
+        actualizarHoja();
     });
 }
 
 // ══════════════════════════════════════════
-//  EXTRAS (in sidebar)
+//  RECARGOS Y PERFIL
 // ══════════════════════════════════════════
 
 function renderExtras() {
-    const grid = document.getElementById('extras-grid');
-    if (!grid) return;
-    grid.innerHTML = Object.entries(CONFIG.factoresExtra).map(([key, obj]) => `
-        <label class="extra-item" id="extra-label-${key}">
-            <div class="flex items-center gap-2.5">
-                <input type="checkbox" id="extra-${key}" data-key="${key}" class="w-4 h-4 rounded border-outline-variant bg-transparent text-primary-dim focus:ring-primary-dim accent-[#b023ff] cursor-pointer">
-                <span class="text-xs text-on-surface">${sanitizeHTML(obj.nombre)}</span>
-            </div>
-            <span class="text-xs font-semibold text-on-surface-variant">+ ${fmt(obj.precio)}</span>
-        </label>
-    `).join('');
+    const cont = document.getElementById('extras-grid');
+    if (!cont) return;
+    cont.innerHTML = Object.entries(CONFIG.factoresExtra).map(([key, obj]) => `
+        <div class="extra" id="ex-${key}" data-extra="${key}" role="button" tabindex="0" aria-pressed="false">
+            <span class="extra__texto">
+                <span class="extra__marca">${icono('i-check')}</span>
+                ${sanitizeHTML(obj.nombre)}
+            </span>
+            <span class="extra__importe">+ ${fmt(obj.precio)}</span>
+        </div>`).join('');
+}
 
-    grid.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-        chk.addEventListener('change', () => {
-            document.getElementById(`extra-label-${chk.dataset.key}`)?.classList.toggle('activo', chk.checked);
-            actualizarSidebar();
-        });
-    });
+function alternarExtra(el) {
+    const key = el.dataset.extra;
+    if (extrasActivos.has(key)) extrasActivos.delete(key); else extrasActivos.add(key);
+    el.classList.toggle('extra--activo', extrasActivos.has(key));
+    el.setAttribute('aria-pressed', String(extrasActivos.has(key)));
+    actualizarHoja();
+}
+
+function renderPerfiles() {
+    const cont = document.getElementById('perfil-buttons');
+    if (!cont) return;
+    cont.className = 'perfil';
+    cont.innerHTML = Object.entries(CONFIG.perfilesCliente).map(([key, mult]) => `
+        <button type="button" class="perfil__boton${key === perfilActual ? ' perfil__boton--activo' : ''}" data-perfil="${key}">
+            <span class="perfil__nombre">${sanitizeHTML(PERFIL_LABEL[key] || key)}</span>
+            <span class="perfil__factor">×${mult}</span>
+        </button>`).join('');
+}
+
+function seleccionarPerfil(perfil) {
+    fijarPerfil(perfil);
+    document.querySelectorAll('.perfil__boton').forEach(b =>
+        b.classList.toggle('perfil__boton--activo', b.dataset.perfil === perfilActual));
+    actualizarHoja();
+}
+
+// ══════════════════════════════════════════
+//  LA HOJA
+// ══════════════════════════════════════════
+
+// Una referencia corta y una fecha. NO un correlativo tipo COT-2026-0431: eso
+// insinuaria que DAK ha emitido cuatrocientas treinta cotizaciones, y seria un
+// dato inventado. Tampoco se promete una validez que la agencia no ofrece.
+const REFERENCIA = Math.random().toString(16).slice(2, 6).toUpperCase();
+
+function pintarFolio() {
+    const ref = document.getElementById('folio-ref');
+    const fecha = document.getElementById('folio-fecha');
+    if (ref) ref.textContent = REFERENCIA;
+    if (fecha) fecha.textContent = new Date().toLocaleDateString('es-PE',
+        { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function lineaAnotacion(item) {
+    const mensual = item.recurrencia === 'mensual';
+    let detalle = '';
+    if (item.tipo === 'nivel') detalle = `${item.tierLabel} ×${item.qty}`;
+    else if (item.tipo === 'custom') detalle = 'a medida';
+    const quitar = item.tipo === 'custom'
+        ? `data-quitar-custom="${item.customId}"`
+        : `data-quitar="${item.key}"`;
+    return `
+    <div class="anotacion">
+        <span class="anotacion__nombre">${sanitizeHTML(item.nombre)}
+            ${detalle ? `<span class="anotacion__detalle">· ${sanitizeHTML(detalle)}</span>` : ''}</span>
+        <span class="anotacion__importe">${conUnidad(item.subtotal, mensual)}</span>
+        <button type="button" class="anotacion__quitar" ${quitar} aria-label="Quitar ${sanitizeHTML(item.nombre)}">
+            ${icono('i-cerrar', 'icono--sm')}
+        </button>
+    </div>`;
+}
+
+function actualizarHoja() {
+    const t = calcularTotal();
+
+    const bloqueUnico = document.getElementById('bloque-unico');
+    const bloqueMensual = document.getElementById('bloque-mensual');
+    const vacia = document.getElementById('hoja-vacia');
+
+    // Los recargos de producción pertenecen al pago único, no al mensual
+    const filasUnico = t.items.unico.map(lineaAnotacion).join('')
+        + t.extrasActivos.map(e => `
+        <div class="anotacion">
+            <span class="anotacion__nombre">${sanitizeHTML(e.nombre)}
+                <span class="anotacion__detalle">· recargo</span></span>
+            <span class="anotacion__importe">${fmt(e.precio)}</span>
+            <button type="button" class="anotacion__quitar" data-quitar-extra="${e.key}" aria-label="Quitar ${sanitizeHTML(e.nombre)}">
+                ${icono('i-cerrar', 'icono--sm')}
+            </button>
+        </div>`).join('');
+
+    const hayUnico = t.items.unico.length > 0 || t.extrasActivos.length > 0;
+    const hayMensual = t.items.mensual.length > 0;
+
+    // Un bloque vacío no se dibuja. Un «S/ 0 /mes» es peor que un hueco.
+    bloqueUnico.hidden = !hayUnico;
+    bloqueMensual.hidden = !hayMensual;
+    if (vacia) vacia.hidden = hayUnico || hayMensual;
+
+    if (hayUnico) document.getElementById('lista-unico').innerHTML = filasUnico;
+    document.getElementById('total-unico').textContent = hayUnico ? fmt(t.unico.total) : '—';
+    if (hayMensual) document.getElementById('lista-mensual').innerHTML = t.items.mensual.map(lineaAnotacion).join('');
+    document.getElementById('total-mensual').innerHTML = hayMensual ? conUnidad(t.mensual.total, true) : '—';
+
+    // Barra flotante de móvil: dos cifras, nunca una combinada
+    const dUnico = document.getElementById('barra-dato-unico');
+    const dMensual = document.getElementById('barra-dato-mensual');
+    if (dUnico) document.getElementById('barra-unico').textContent = hayUnico ? fmt(t.unico.total) : '—';
+    if (dMensual) document.getElementById('barra-mensual').innerHTML = hayMensual ? conUnidad(t.mensual.total, true) : '—';
+
+    // Fila de perfil, solo para el equipo
+    const filaPerfil = document.getElementById('row-perfil');
+    if (filaPerfil) {
+        filaPerfil.hidden = !isAdmin;
+        if (isAdmin) {
+            document.getElementById('label-perfil').textContent =
+                `${PERFIL_LABEL[t.perfil] || t.perfil} ×${t.multiplicador}`;
+            document.getElementById('sidebar-perfil-total').textContent =
+                fmt(t.unico.conPerfil + t.mensual.conPerfil);
+        }
+    }
+
+    const sello = document.getElementById('sello');
+    if (sello) {
+        const aprox = document.getElementById('chk-aprox')?.checked ?? true;
+        sello.textContent = aprox ? 'Referencial' : 'Cotización oficial';
+        sello.classList.toggle('sello--oficial', !aprox);
+    }
+}
+
+// ══════════════════════════════════════════
+//  PARTIDA LIBRE
+// ══════════════════════════════════════════
+
+function agregarItemPersonalizado() {
+    const nombreEl = document.getElementById('custom-nombre');
+    const precioEl = document.getElementById('custom-precio');
+    const nombre = nombreEl.value.trim().slice(0, 100);
+    const precio = parseFloat(precioEl.value) || 0;
+    if (!nombre || precio <= 0 || precio > 999999) return;
+    const rec = document.querySelector('[data-libre-rec].nivel--activo')?.dataset.libreRec || 'unico';
+    itemsPersonalizados.push({ id: Date.now(), nombre, precio, recurrencia: rec });
+    nombreEl.value = ''; precioEl.value = '';
+    renderListaCustom(); actualizarHoja(); actualizarCuentas();
+}
+
+function eliminarItemPersonalizado(id) {
+    itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
+    renderListaCustom(); actualizarHoja(); actualizarCuentas();
+}
+
+function renderListaCustom() {
+    const lista = document.getElementById('custom-items-list');
+    if (!lista) return;
+    lista.innerHTML = itemsPersonalizados.map(i => `
+        <li class="anotacion">
+            <span class="anotacion__nombre">${sanitizeHTML(i.nombre)}
+                <span class="anotacion__detalle">· ${i.recurrencia === 'mensual' ? 'cada mes' : 'una vez'}</span></span>
+            <span class="anotacion__importe">${conUnidad(i.precio, i.recurrencia === 'mensual')}</span>
+            <button type="button" class="anotacion__quitar" data-quitar-custom="${i.id}" aria-label="Quitar ${sanitizeHTML(i.nombre)}">
+                ${icono('i-cerrar', 'icono--sm')}
+            </button>
+        </li>`).join('');
 }
 
 // ══════════════════════════════════════════
 //  CALCULATION
 // ══════════════════════════════════════════
 
-function calcularTotal() {
-    const perfil = document.getElementById('perfil-cliente').value || 'bajo';
-    let subtotalBase = 0;
+// Un servicio se cobra una vez o cada mes. La recurrencia vive en el descriptor de
+// CATEGORIAS (js/data.js) y NO en CONFIG: getConfig() hace un merge superficial por
+// clave y aplicarAjustes() persiste el CONFIG entero, así que un campo nuevo dentro
+// de preciosFijos se perdería en cualquier navegador con precios guardados y el
+// servicio pasaría a «único» en silencio. CATEGORIAS no se persiste nunca.
+const recurrenciaDe = s => (s && s.recurrencia === 'mensual') ? 'mensual' : 'unico';
+
+// La única lectura del DOM. calcularTotal, actualizarHoja, construirCuerpoEmail y
+// confirmarCita consumen esto. Antes cada una recorría CATEGORIAS por su cuenta: eran
+// cuatro implementaciones de la misma recolección que había que cambiar a la vez para
+// que el email y el sidebar no dijeran números distintos.
+function recolectarSeleccion() {
+    const unico = [], mensual = [];
 
     CATEGORIAS.forEach(cat => {
         if (cat.id === 'personalizado' || !cat.servicios) return;
         cat.servicios.forEach(s => {
-            const chk = document.getElementById(`chk-${s.key}`);
-            if (!chk?.checked) return;
-            if (s.tipo === 'nivel') {
-                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
-                subtotalBase += qty * (CONFIG.serviciosBase[s.key]?.[lvl] ?? 0);
-            } else if (s.tipo === 'fijo') {
-                subtotalBase += CONFIG.preciosFijos[s.key]?.precio ?? 0;
-            }
-        });
-    });
+            if (!seleccionados.has(s.key)) return;
 
-    itemsPersonalizados.forEach(i => (subtotalBase += i.precio));
-
-    const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
-    const subtotalMult = subtotalBase * multiplicador;
-
-    let extrasTotal = 0;
-    const extrasActivos = [];
-    Object.entries(CONFIG.factoresExtra).forEach(([key, obj]) => {
-        if (document.getElementById(`extra-${key}`)?.checked) {
-            extrasTotal += obj.precio;
-            extrasActivos.push(obj);
-        }
-    });
-
-    return { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal: subtotalMult + extrasTotal };
-}
-
-// ══════════════════════════════════════════
-//  SIDEBAR UPDATE (replaces wizard Step 3)
-// ══════════════════════════════════════════
-
-function actualizarSidebar() {
-    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, totalFinal } = calcularTotal();
-    const perfilLabel = PERFIL_LABEL[perfil] || perfil;
-
-    // Collect selected items
-    let items = [];
-    CATEGORIAS.forEach(cat => {
-        if (cat.id === 'personalizado' || !cat.servicios) return;
-        cat.servicios.forEach(s => {
-            const chk = document.getElementById(`chk-${s.key}`);
-            if (!chk?.checked) return;
+            let item;
             if (s.tipo === 'nivel') {
                 const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 1;
                 const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
                 const precioUnit = CONFIG.serviciosBase[s.key]?.[lvl] ?? 0;
-                const tierLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
-                items.push({ key: s.key, nombre: s.label, tipo: 'nivel', qty, tierLabel, subtotal: qty * precioUnit });
-            } else if (s.tipo === 'fijo') {
-                const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
-                items.push({ key: s.key, nombre: s.label, tipo: 'fijo', subtotal: p });
+                item = {
+                    key: s.key, nombre: s.label, tipo: 'nivel', qty, lvl,
+                    tierLabel: s.tierLabels?.[lvl] || NIVELES_LABEL[lvl],
+                    precioUnit, subtotal: qty * precioUnit,
+                };
+            } else {
+                item = {
+                    key: s.key, nombre: s.label, tipo: 'fijo',
+                    subtotal: CONFIG.preciosFijos[s.key]?.precio ?? 0,
+                };
             }
+            item.recurrencia = recurrenciaDe(s);
+            (item.recurrencia === 'mensual' ? mensual : unico).push(item);
         });
     });
-    itemsPersonalizados.forEach(i =>
-        items.push({ key: `custom-${i.id}`, nombre: i.nombre, tipo: 'custom', customId: i.id, subtotal: i.precio })
-    );
 
-    // Render items
-    const itemsEl = document.getElementById('sidebar-items');
-    const emptyEl = document.getElementById('sidebar-empty');
-
-    if (items.length === 0) {
-        if (emptyEl) emptyEl.style.display = '';
-        // Remove any existing item rows
-        itemsEl.querySelectorAll('.sidebar-item').forEach(el => el.remove());
-    } else {
-        if (emptyEl) emptyEl.style.display = 'none';
-        let html = items.map(item => {
-            let detail = '';
-            if (item.tipo === 'nivel') detail = `${item.tierLabel} ×${item.qty}`;
-            else if (item.tipo === 'fijo') detail = 'Precio fijo';
-            else detail = 'Personalizado';
-
-            const deleteAttr = item.tipo === 'custom'
-                ? `data-delete-custom="${item.customId}"`
-                : `data-delete-svc="${item.key}"`;
-
-            return `
-            <div class="sidebar-item">
-                <div class="flex-1 min-w-0">
-                    <h4 class="text-xs font-semibold text-on-surface truncate">${sanitizeHTML(item.nombre)}</h4>
-                    <p class="text-[10px] text-on-surface-variant uppercase">${sanitizeHTML(detail)}</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold text-white whitespace-nowrap">${fmt(item.subtotal)}</span>
-                    <button type="button" class="sidebar-item-delete" ${deleteAttr} title="Eliminar">
-                        <span class="material-symbols-outlined text-sm">close</span>
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-        // Keep the empty placeholder (hidden) + add items
-        itemsEl.innerHTML = `<div class="sidebar-empty flex flex-col items-center justify-center py-6 opacity-30" id="sidebar-empty" style="display:none">
-            <span class="material-symbols-outlined text-4xl mb-2">shopping_cart</span>
-            <p class="text-xs text-center">Seleccioná servicios<br>para comenzar</p>
-        </div>` + html;
-
-        // Attach delete handlers
-        itemsEl.querySelectorAll('.sidebar-item-delete[data-delete-svc]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const key = btn.dataset.deleteSvc;
-                const chk = document.getElementById(`chk-${key}`);
-                if (chk) {
-                    chk.checked = false;
-                    document.getElementById(`card-${key}`)?.classList.remove('activo');
-                    document.getElementById(`body-${key}`)?.classList.remove('visible');
-                }
-                actualizarSidebar();
-            });
-        });
-
-        itemsEl.querySelectorAll('.sidebar-item-delete[data-delete-custom]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = parseInt(btn.dataset.deleteCustom);
-                itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
-                renderListaCustom();
-                actualizarSidebar();
-            });
-        });
-    }
-
-    // Update totals
-    document.getElementById('sidebar-subtotal').textContent = fmt(subtotalBase);
-    document.getElementById('sidebar-extras-total').textContent = fmt(extrasTotal);
-    document.getElementById('sidebar-total').textContent = fmt(totalFinal);
-
-    // Profile row (admin)
-    const rowPerfil = document.getElementById('row-perfil');
-    if (isAdmin && rowPerfil) {
-        rowPerfil.style.display = '';
-        document.getElementById('label-perfil').textContent = `× ${perfilLabel} (${multiplicador}x)`;
-        document.getElementById('sidebar-perfil-total').textContent = fmt(subtotalMult);
-    }
-
-    // Mobile total
-    const mobileTotal = document.getElementById('mobile-total-value');
-    if (mobileTotal) mobileTotal.textContent = fmt(totalFinal);
-}
-
-// ══════════════════════════════════════════
-//  PERSONALIZADO (Custom Items)
-// ══════════════════════════════════════════
-
-function agregarItemPersonalizado() {
-    const nombreEl = document.getElementById('custom-nombre');
-    const precioEl = document.getElementById('custom-precio');
-    const nombre = nombreEl.value.trim().replace(/[<>"'`]/g, '').slice(0, 100);
-    const precio = parseFloat(precioEl.value) || 0;
-    if (!nombre || precio <= 0 || precio > 999999) return;
-    if (itemsPersonalizados.length >= 20) return; // max 20 custom items
-    itemsPersonalizados.push({ id: Date.now(), nombre, precio });
-    nombreEl.value = '';
-    precioEl.value = '';
-    renderListaCustom();
-    actualizarSidebar();
-}
-
-function eliminarItemPersonalizado(id) {
-    itemsPersonalizados = itemsPersonalizados.filter(i => i.id !== id);
-    renderListaCustom();
-    actualizarSidebar();
-}
-
-function renderListaCustom() {
-    const list = document.getElementById('custom-items-list');
-    if (!list) return;
-    list.innerHTML = itemsPersonalizados.length
-        ? itemsPersonalizados.map(i => `
-            <li class="custom-item">
-                <span class="custom-item-nombre">${sanitizeHTML(i.nombre)}</span>
-                <span class="custom-item-precio">${fmt(i.precio)}</span>
-                <button type="button" class="btn-delete-custom" data-custom-id="${i.id}" aria-label="Eliminar">
-                    <span class="material-symbols-outlined text-sm">close</span>
-                </button>
-            </li>`).join('')
-        : '<li class="custom-empty">Ningún ítem agregado aún.</li>';
-
-    list.querySelectorAll('.btn-delete-custom[data-custom-id]').forEach(btn => {
-        btn.addEventListener('click', () => eliminarItemPersonalizado(parseInt(btn.dataset.customId)));
+    itemsPersonalizados.forEach(i => {
+        const item = {
+            key: `custom-${i.id}`, nombre: i.nombre, tipo: 'custom', customId: i.id,
+            subtotal: i.precio,
+            recurrencia: i.recurrencia === 'mensual' ? 'mensual' : 'unico',
+        };
+        (item.recurrencia === 'mensual' ? mensual : unico).push(item);
     });
+
+    // Los factores extra son recargos sobre la producción: urgencia, desplazamiento,
+    // revisión, drone. Ninguno es un servicio recurrente, así que van siempre al
+    // bloque de pago único.
+    const extras = [];
+    Object.entries(CONFIG.factoresExtra).forEach(([key, obj]) => {
+        if (extrasActivos.has(key)) extras.push({ key, nombre: obj.nombre, precio: obj.precio });
+    });
+
+    return { unico, mensual, extras };
+}
+
+// Devuelve dos totales, nunca uno. No existe `totalFinal` a propósito: sumar una web
+// de pago único con una gestión de ads mensual da un número que no significa nada, y
+// era justamente la ambigüedad que este cambio elimina. Si algún consumidor se quedó
+// sin migrar, falla ruidosamente en vez de enseñar una cifra mal.
+function calcularTotal() {
+    const perfil = perfilActual;
+    const multiplicador = CONFIG.perfilesCliente[perfil] ?? 1;
+    const { unico, mensual, extras } = recolectarSeleccion();
+
+    const suma = arr => arr.reduce((t, i) => t + i.subtotal, 0);
+    const baseUnico = suma(unico);
+    const baseMensual = suma(mensual);
+    const extrasTotal = extras.reduce((t, e) => t + e.precio, 0);
+
+    return {
+        perfil, multiplicador,
+        items: { unico, mensual },
+        extrasActivos: extras,
+        unico: {
+            base: baseUnico,
+            conPerfil: baseUnico * multiplicador,
+            extras: extrasTotal,
+            total: baseUnico * multiplicador + extrasTotal,
+        },
+        mensual: {
+            base: baseMensual,
+            conPerfil: baseMensual * multiplicador,
+            extras: 0,
+            total: baseMensual * multiplicador,
+        },
+    };
 }
 
 // ══════════════════════════════════════════
@@ -705,58 +712,50 @@ function renderListaCustom() {
 // ══════════════════════════════════════════
 
 function construirCuerpoEmail() {
-    const { perfil, subtotalBase, multiplicador, subtotalMult, extrasTotal, extrasActivos, totalFinal } = calcularTotal();
+    const t = calcularTotal();
     const nombre = document.getElementById('nombre-cliente').value.trim() || 'el cliente';
     const esAprox = document.getElementById('chk-aprox')?.checked ?? true;
-    const perfilLabel = PERFIL_LABEL[perfil] || perfil;
-    const fecha = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    const fecha = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    let lineas = [];
-    CATEGORIAS.forEach(cat => {
-        if (cat.id === 'personalizado' || !cat.servicios) return;
-        cat.servicios.forEach(s => {
-            const chk = document.getElementById(`chk-${s.key}`);
-            if (!chk?.checked) return;
-            if (s.tipo === 'nivel') {
-                const qty = parseInt(document.getElementById(`qty-${s.key}`)?.value) || 0;
-                const lvl = document.getElementById(`lvl-${s.key}`)?.value || 'basico';
-                const sub = qty * (CONFIG.serviciosBase[s.key]?.[lvl] ?? 0);
-                const tLabel = s.tierLabels?.[lvl] || NIVELES_LABEL[lvl];
-                if (sub > 0) lineas.push(`  • ${s.label} ×${qty} (${tLabel}): ${fmt(sub)}`);
-            } else if (s.tipo === 'fijo') {
-                const p = CONFIG.preciosFijos[s.key]?.precio ?? 0;
-                lineas.push(`  • ${s.label}: ${fmt(p)}`);
-            }
-        });
-    });
-    itemsPersonalizados.forEach(i => lineas.push(`  • ${i.nombre} (personalizado): ${fmt(i.precio)}`));
+    const linea = i => {
+        const detalle = i.tipo === 'nivel' ? ` x${i.qty} (${i.tierLabel})`
+                      : i.tipo === 'custom' ? ' (a medida)' : '';
+        return `  - ${i.nombre}${detalle}: ${fmt(i.subtotal)}`;
+    };
 
-    const extras = extrasActivos.map(e => `  • ${e.nombre}: ${fmt(e.precio)}`).join('\n');
+    const filas = [];
+    filas.push(esAprox ? 'PRESUPUESTO REFERENCIAL DAK' : 'COTIZACION OFICIAL DAK');
+    filas.push('==============================');
+    filas.push(`Cliente:    ${nombre}`);
+    filas.push(`Fecha:      ${fecha}`);
+    filas.push(`Referencia: ${REFERENCIA}`);
+    if (isAdmin) filas.push(`Perfil:     ${PERFIL_LABEL[t.perfil] || t.perfil} (x${t.multiplicador})`);
 
-    const lines = [
-        esAprox ? `PRESUPUESTO APROXIMADO DAK` : `COTIZACIÓN OFICIAL DAK`,
-        `══════════════════════════════`,
-        `Cliente: ${nombre}`,
-    ];
-    if (isAdmin) lines.push(`Perfil:  ${perfilLabel} (×${multiplicador})`);
-    lines.push(
-        `Fecha:   ${fecha}`,
-        esAprox ? `Nota:    Los precios son ORIENTATIVOS y pueden ajustarse.` : '',
-        `══════════════════════════════`,
-        `SERVICIOS`,
-        `──────────────────────────────`,
-        lineas.join('\n') || '  (sin servicios)',
-        `──────────────────────────────`,
-        `Subtotal base:          ${fmt(subtotalBase)}`,
-    );
-    if (isAdmin) lines.push(`× Perfil ${perfilLabel} (${multiplicador}x): ${fmt(subtotalMult)}`);
-    lines.push(
-        extrasActivos.length ? `+ Extras:\n${extras}\n  Total extras: ${fmt(extrasTotal)}` : '',
-        `──────────────────────────────`,
-        `TOTAL FINAL:            ${fmt(totalFinal)}`,
-        `══════════════════════════════`,
-    );
-    return lines.filter(Boolean).join('\n');
+    // Dos secciones y dos totales. Nunca una suma de las dos cosas: un numero que
+    // mezcla una web de pago unico con una gestion mensual no significa nada.
+    if (t.items.unico.length || t.extrasActivos.length) {
+        filas.push('', 'SE PAGA UNA VEZ', '------------------------------');
+        t.items.unico.forEach(i => filas.push(linea(i)));
+        t.extrasActivos.forEach(e => filas.push(`  - ${e.nombre} (recargo): ${fmt(e.precio)}`));
+        filas.push('------------------------------');
+        filas.push(`TOTAL DE UNA VEZ:  ${fmt(t.unico.total)}`);
+    }
+
+    if (t.items.mensual.length) {
+        filas.push('', 'SE PAGA CADA MES', '------------------------------');
+        t.items.mensual.forEach(i => filas.push(linea(i)));
+        filas.push('------------------------------');
+        filas.push(`TOTAL AL MES:      ${fmt(t.mensual.total)} /mes`);
+    }
+
+    if (!t.items.unico.length && !t.items.mensual.length && !t.extrasActivos.length) {
+        filas.push('', '  (sin servicios elegidos)');
+    }
+
+    filas.push('==============================');
+    if (esAprox) filas.push('Los importes son una referencia y se ajustan al alcance real del proyecto.');
+    filas.push('DAK Agency - Chiclayo, Peru - marketing@dakagency.net');
+    return filas.join('\n');
 }
 
 function enviarCotizacion() {
@@ -769,13 +768,13 @@ function enviarCotizacion() {
         feedback.textContent = !emailDestino
             ? '⚠️ Ingresá el email del cliente.'
             : '⚠️ El formato del email no es válido.';
-        feedback.className = 'text-xs text-center error';
+        feedback.className = 'nota nota--error';
         return;
     }
 
     if (isCooldown('email')) {
         feedback.textContent = '⏳ Esperá unos segundos antes de enviar otra vez.';
-        feedback.className = 'text-xs text-center error';
+        feedback.className = 'nota nota--error';
         return;
     }
 
@@ -783,23 +782,39 @@ function enviarCotizacion() {
     const total = calcularTotal();
 
     if (typeof EMAILJS_CONFIG !== 'undefined' && EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.publicKey) {
-        feedback.textContent = 'Enviando...';
-        feedback.className = 'text-xs text-center text-on-surface-variant';
-        emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
-            to_email: emailDestino,
-            to_name: nombre,
-            cotizacion: cuerpo,
-            total: fmt(total.totalFinal),
-            mensaje: mensaje || ''
-        }, EMAILJS_CONFIG.publicKey)
-            .then(() => {
-                feedback.textContent = '✅ Cotización enviada con éxito.';
-                feedback.className = 'text-xs text-center ok';
-            })
-            .catch(() => {
-                feedback.textContent = '❌ Error al enviar. Verificá la configuración.';
-                feedback.className = 'text-xs text-center error';
-            });
+        feedback.textContent = 'Enviando…';
+        feedback.className = 'nota';
+
+        const enviar = (destino, aNombre) => emailjs.send(
+            EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, {
+                to_email: destino,
+                to_name: aNombre,
+                cotizacion: cuerpo,
+                // La plantilla vive en el dashboard de EmailJS, no en el repo: si se
+                // quita la variable `total`, renderiza vacío y nadie se entera. Se
+                // mantiene apuntando al pago único y se añaden las dos nuevas.
+                total: fmt(total.unico.total),
+                total_unico: fmt(total.unico.total),
+                total_mensual: fmt(total.mensual.total),
+                mensaje: mensaje || ''
+            }, EMAILJS_CONFIG.publicKey);
+
+        // Dos envíos: la copia para el prospecto y el aviso a DAK. Hasta ahora la
+        // cotización se mandaba SOLO al prospecto, así que alguien que llegaba hasta
+        // el final del embudo no dejaba ni rastro en la agencia.
+        Promise.allSettled([
+            enviar(emailDestino, nombre),
+            enviar(DAK_EMAIL, 'Equipo DAK — presupuesto de ' + nombre),
+        ]).then(([alCliente, aDak]) => {
+            if (aDak.status === 'rejected') console.error('[DAK] no se pudo avisar a la agencia:', aDak.reason);
+            if (alCliente.status === 'fulfilled') {
+                feedback.textContent = 'Listo, te lo enviamos por email.';
+                feedback.className = 'nota nota--ok';
+            } else {
+                feedback.textContent = 'No se pudo enviar. Probá de nuevo en un momento.';
+                feedback.className = 'nota nota--error';
+            }
+        });
     } else {
         enviarMailto(emailDestino, nombre, cuerpo, mensaje, feedback);
     }
@@ -820,28 +835,24 @@ function enviarMailto(email, nombre, cuerpo, mensaje, feedbackEl) {
 //  MODAL AJUSTES
 // ══════════════════════════════════════════
 
-const SERVICIOS_BASE_KEYS = [
-    { key: 'video-corto', label: 'Video reel / corto' },
-    { key: 'video-largo', label: 'Video largo' },
-    { key: 'fotos-estudio', label: 'Sesión en estudio' },
-    { key: 'flyer', label: 'Flyer' },
-    { key: 'branding-manual', label: 'Manual de marca' },
-    { key: 'pagina-web', label: 'Página web' },
-    { key: 'chatbot-whatsapp', label: 'Chatbot WhatsApp' },
-    { key: 'crm-setup', label: 'CRM Setup' },
-];
+// Derivado de CATEGORIAS, no copiado a mano: la lista escrita a pelo se
+// desincronizaba en silencio y el modal de ajustes dejaba de mostrar el servicio.
+const SERVICIOS_BASE_KEYS = CATEGORIAS
+    .flatMap(c => c.servicios || [])
+    .filter(s => s.tipo === 'nivel')
+    .map(s => ({ key: s.key, label: s.label }));
 
 function abrirModalAjustes() {
     const modal = document.getElementById('modal-ajustes');
     modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('modal-open');
+    modal.hidden = false;
     rellenarModalAjustes();
 }
 
 function cerrarModalAjustes() {
     const modal = document.getElementById('modal-ajustes');
     modal.setAttribute('aria-hidden', 'true');
-    modal.classList.remove('modal-open');
+    modal.hidden = true;
 }
 
 function rellenarModalAjustes() {
@@ -850,17 +861,17 @@ function rellenarModalAjustes() {
     sb.innerHTML = '';
     SERVICIOS_BASE_KEYS.forEach(({ key, label }) => {
         const bloque = document.createElement('div');
-        bloque.className = 'ajustes-bloque';
-        bloque.innerHTML = `<strong>${sanitizeHTML(label)}</strong>`;
+        bloque.className = 'ajuste-grupo';
+        bloque.innerHTML = `<p class="ajuste-grupo__titulo">${sanitizeHTML(label)}</p>`;
         const filas = NIVELES.map(n => {
             const id = `adj-sb-${key}-${n}`;
             const val = CONFIG.serviciosBase[key]?.[n] ?? 0;
-            return `<div class="ajustes-fila">
-                <label for="${id}">${NIVELES_LABEL[n]}</label>
-                <input type="number" id="${id}" data-sb="${key}" data-nivel="${n}" value="${val}" min="0">
+            return `<div class="ajuste">
+                <label class="ajuste__rotulo" for="${id}">${NIVELES_LABEL[n]}</label>
+                <input class="campo-texto ajuste__campo" type="number" id="${id}" data-sb="${key}" data-nivel="${n}" value="${val}" min="0">
             </div>`;
         }).join('');
-        bloque.innerHTML += `<div class="ajustes-filas">${filas}</div>`;
+        bloque.innerHTML += `<div>${filas}</div>`;
         sb.appendChild(bloque);
     });
 
@@ -868,9 +879,9 @@ function rellenarModalAjustes() {
     const pf = document.getElementById('ajustes-precios-fijos');
     pf.innerHTML = '';
     Object.entries(CONFIG.preciosFijos).forEach(([key, obj]) => {
-        pf.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-pf-${key}">${sanitizeHTML(obj.nombre)}</label>
-            <input type="number" id="adj-pf-${key}" data-pf="${key}" value="${obj.precio}" min="0">
+        pf.innerHTML += `<div class="ajuste">
+            <label class="ajuste__rotulo" for="adj-pf-${key}">${sanitizeHTML(obj.nombre)}</label>
+            <input class="campo-texto ajuste__campo" type="number" id="adj-pf-${key}" data-pf="${key}" value="${obj.precio}" min="0">
         </div>`;
     });
 
@@ -879,9 +890,9 @@ function rellenarModalAjustes() {
     pe.innerHTML = '';
     Object.entries(CONFIG.perfilesCliente).forEach(([key, val]) => {
         const label = PERFIL_LABEL[key] || (key.charAt(0).toUpperCase() + key.slice(1));
-        pe.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-pe-${key}">${sanitizeHTML(label)}</label>
-            <input type="number" step="0.1" id="adj-pe-${key}" data-pe="${key}" value="${val}" min="0">
+        pe.innerHTML += `<div class="ajuste">
+            <label class="ajuste__rotulo" for="adj-pe-${key}">${sanitizeHTML(label)}</label>
+            <input class="campo-texto ajuste__campo" type="number" step="0.1" id="adj-pe-${key}" data-pe="${key}" value="${val}" min="0">
         </div>`;
     });
 
@@ -889,9 +900,9 @@ function rellenarModalAjustes() {
     const fe = document.getElementById('ajustes-factores-extra');
     fe.innerHTML = '';
     Object.entries(CONFIG.factoresExtra).forEach(([key, obj]) => {
-        fe.innerHTML += `<div class="ajustes-fila">
-            <label for="adj-fe-${key}">${sanitizeHTML(obj.nombre)}</label>
-            <input type="number" id="adj-fe-${key}" data-fe="${key}" value="${obj.precio}" min="0">
+        fe.innerHTML += `<div class="ajuste">
+            <label class="ajuste__rotulo" for="adj-fe-${key}">${sanitizeHTML(obj.nombre)}</label>
+            <input class="campo-texto ajuste__campo" type="number" id="adj-fe-${key}" data-fe="${key}" value="${obj.precio}" min="0">
         </div>`;
     });
 }
@@ -928,529 +939,51 @@ function resetearDefaults() {
 }
 
 // ══════════════════════════════════════════
-//  INTERACTIVE BACKGROUND
-// ══════════════════════════════════════════
-
-const MATH_SYMBOLS = ['π', 'Σ', '∫', '∞', '×', '+', '=', '%', '√', 'Δ', 'θ', 'λ', 'Ω', '÷', '±', '≈', 'φ', 'μ', 'ε', '∂', '∇'];
-
-function initMouseGlow() {
-    const glow = document.getElementById('mouse-glow');
-    if (!glow) return;
-    let raf = null;
-    document.addEventListener('mousemove', e => {
-        if (raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => {
-            glow.style.left = e.clientX + 'px';
-            glow.style.top = e.clientY + 'px';
-            if (!glow.classList.contains('active')) glow.classList.add('active');
-        });
-    });
-    document.addEventListener('mouseleave', () => glow.classList.remove('active'));
-}
-
-function initMathMeteors() {
-    const container = document.getElementById('meteor-container');
-    if (!container) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    const MAX_METEORS = 8;
-    let activeMeteors = 0;
-
-    const COLOR_VARIANTS = [
-        {
-            cls: 'math-meteor--purple',
-            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.25) 0%, rgba(214,146,255,0.18) 15%, rgba(176,36,255,0.1) 35%, rgba(176,36,255,0.04) 60%, transparent 100%)',
-            coreBright: 'rgba(255, 255, 255, 0.35)',
-            coreMid: 'rgba(176, 36, 255, 0.2)',
-        },
-        {
-            cls: 'math-meteor--cyan',
-            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.2) 0%, rgba(150,255,255,0.15) 15%, rgba(95,248,248,0.08) 35%, rgba(95,248,248,0.03) 60%, transparent 100%)',
-            coreBright: 'rgba(255, 255, 255, 0.3)',
-            coreMid: 'rgba(95, 248, 248, 0.18)',
-        },
-        {
-            cls: 'math-meteor--white',
-            trail: 'radial-gradient(ellipse at 100% 50%, rgba(255,255,255,0.3) 0%, rgba(214,146,255,0.12) 20%, rgba(176,36,255,0.05) 50%, transparent 100%)',
-            coreBright: 'rgba(255, 255, 255, 0.4)',
-            coreMid: 'rgba(214, 146, 255, 0.15)',
-        },
-    ];
-
-    function pickColor() {
-        const r = Math.random();
-        if (r < 0.55) return COLOR_VARIANTS[0]; // purple (dominant)
-        if (r < 0.85) return COLOR_VARIANTS[1]; // cyan
-        return COLOR_VARIANTS[2];                // white (rare)
-    }
-
-    function spawnMeteor() {
-        if (activeMeteors >= MAX_METEORS) {
-            setTimeout(spawnMeteor, 1500);
-            return;
-        }
-
-        const symbol = MATH_SYMBOLS[Math.floor(Math.random() * MATH_SYMBOLS.length)];
-        const color = pickColor();
-        const el = document.createElement('span');
-        el.className = `math-meteor ${color.cls}`;
-        el.textContent = symbol;
-
-        // Depth layer: 0 = close/big, 1 = far/small
-        const depth = Math.random();
-        const size = depth < 0.3 ? 24 + Math.random() * 14          // close: 24-38px
-                   : depth < 0.7 ? 16 + Math.random() * 10          // mid:   16-26px
-                   :                10 + Math.random() * 8;          // far:   10-18px
-        el.style.fontSize = size + 'px';
-
-        // Far meteors get blur for depth-of-field
-        const blur = depth > 0.7 ? (0.5 + (depth - 0.7) * 4) : 0;
-        el.style.setProperty('--blur', blur + 'px');
-
-        // Trail: wide cone of fire behind the rock — proportional to symbol size
-        const trailW = size * 5 + 40 + Math.random() * 60;   // wide: 90-290px
-        const trailH = size * 1.2 + 8 + Math.random() * 10;  // tall: 20-65px (cone shape)
-        const trailBlur = 4 + size * 0.15 + Math.random() * 4; // heavy blur: 4-12px
-        el.style.setProperty('--trail-w', trailW + 'px');
-        el.style.setProperty('--trail-h', trailH + 'px');
-        el.style.setProperty('--trail-blur', trailBlur + 'px');
-        el.style.setProperty('--trail-gradient', color.trail);
-        el.style.setProperty('--core-bright', color.coreBright);
-        el.style.setProperty('--core-mid', color.coreMid);
-
-        // Opacity scales with depth (far = dimmer)
-        const peakOpacity = depth > 0.7 ? 0.5 : depth > 0.4 ? 0.75 : 1;
-        el.style.setProperty('--peak-opacity', peakOpacity);
-        el.style.setProperty('--start-scale', (0.4 + Math.random() * 0.3).toFixed(2));
-        el.style.setProperty('--end-scale', (0.2 + Math.random() * 0.3).toFixed(2));
-
-        // Random start position along top or right edge
-        const fromTop = Math.random() > 0.4;
-        const startX = fromTop ? (Math.random() * window.innerWidth) : window.innerWidth + 20;
-        const startY = fromTop ? -40 : (Math.random() * window.innerHeight * 0.6);
-        el.style.left = startX + 'px';
-        el.style.top = startY + 'px';
-
-        // Move diagonally down-left with varied angles
-        const dx = -(350 + Math.random() * 700);
-        const dy = 250 + Math.random() * 550;
-        const angle = -10 - Math.random() * 35;
-        const duration = 2.5 + Math.random() * 3;
-
-        el.style.setProperty('--dx', dx + 'px');
-        el.style.setProperty('--dy', dy + 'px');
-        el.style.setProperty('--angle', angle + 'deg');
-        el.style.setProperty('--duration', duration + 's');
-
-        container.appendChild(el);
-        activeMeteors++;
-
-        el.addEventListener('animationend', () => {
-            el.remove();
-            activeMeteors--;
-        });
-
-        // Schedule next meteor (faster with fewer active)
-        const delay = 2000 + Math.random() * 5000;
-        setTimeout(spawnMeteor, delay);
-    }
-
-    // Ambient constellation particles
-    function initConstellation() {
-        const DOTS = 20;
-        const colors = [
-            'rgba(176, 36, 255, 0.35)',
-            'rgba(95, 248, 248, 0.25)',
-            'rgba(214, 146, 255, 0.3)',
-            'rgba(255, 255, 255, 0.15)',
-        ];
-
-        for (let i = 0; i < DOTS; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'constellation-dot';
-            dot.style.left = Math.random() * 100 + '%';
-            dot.style.top = Math.random() * 100 + '%';
-            dot.style.setProperty('--dot-size', (1.5 + Math.random() * 3) + 'px');
-            dot.style.setProperty('--dot-color', colors[Math.floor(Math.random() * colors.length)]);
-            dot.style.setProperty('--float-duration', (6 + Math.random() * 10) + 's');
-            dot.style.setProperty('--pulse-duration', (2 + Math.random() * 4) + 's');
-            dot.style.setProperty('--float-x', (-20 + Math.random() * 40) + 'px');
-            dot.style.setProperty('--float-y', (-20 + Math.random() * 40) + 'px');
-            dot.style.setProperty('--min-opacity', (0.1 + Math.random() * 0.15).toFixed(2));
-            dot.style.setProperty('--max-opacity', (0.35 + Math.random() * 0.35).toFixed(2));
-            dot.style.animationDelay = (Math.random() * 8) + 's';
-            container.appendChild(dot);
-        }
-    }
-
-    initConstellation();
-
-    // Stagger the first few meteors
-    setTimeout(spawnMeteor, 1000);
-    setTimeout(spawnMeteor, 2500 + Math.random() * 1500);
-    setTimeout(spawnMeteor, 5000 + Math.random() * 2000);
-}
-
-// ══════════════════════════════════════════
-//  AGENDAR CITA — Full-Screen Calendar
-// ══════════════════════════════════════════
-
-const API_BASE = 'https://dak-calculator.vercel.app';
-const MONTH_NAMES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const DAY_NAMES_FULL = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-
-let citaRawSlots = {};          // Original API response keyed by label
-let citaAvailableDates = {};    // Map: "YYYY-MM-DD" -> { label, slots[] }
-let citaMonths = [];            // ["2025-04", "2025-05"]
-let citaCurrentMonthIdx = 0;
-let citaSelectedDateStr = null; // "YYYY-MM-DD"
-let citaSelectedSlot = null;    // { start, end, hour }
-
-function formatHour12(h24) {
-    const hour = parseInt(h24);
-    const suffix = hour >= 12 ? 'PM' : 'AM';
-    const h12 = hour % 12 || 12;
-    return `${h12}:00 ${suffix}`;
-}
-
-function formatDateLong(dateStr) {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    const dayName = DAY_NAMES_FULL[date.getDay()];
-    const capDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-    return `${capDay} ${d} de ${MONTH_NAMES_ES[m - 1].toLowerCase()}`;
-}
-
-function abrirModalCita() {
-    const overlay = document.getElementById('cita-overlay');
-    overlay.setAttribute('aria-hidden', 'false');
-    overlay.classList.add('cita-open');
-    document.body.style.overflow = 'hidden';
-
-    // Reset state
-    citaSelectedDateStr = null;
-    citaSelectedSlot = null;
-
-    // Auto-fill from sidebar
-    const sideNombre = document.getElementById('nombre-cliente')?.value || '';
-    const sideEmail = document.getElementById('email-cliente')?.value || '';
-    const citaNombre = document.getElementById('cita-nombre');
-    const citaEmail = document.getElementById('cita-email');
-    if (citaNombre) citaNombre.value = sideNombre;
-    if (citaEmail) citaEmail.value = sideEmail;
-
-    // Show loading, hide everything else
-    document.getElementById('cita-loading').style.display = 'flex';
-    document.getElementById('cita-left-col').style.display = 'none';
-    document.getElementById('cita-right-col').style.display = 'none';
-    document.getElementById('cita-error').style.display = 'none';
-    document.getElementById('cita-confirmacion').style.display = 'none';
-    document.getElementById('cita-summary-card').style.display = 'none';
-
-    const confirmBtn = document.getElementById('cita-btn-confirmar');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'CONFIRMAR REUNIÓN';
-
-    const cancelBtn = document.getElementById('cita-btn-cancelar');
-    cancelBtn.textContent = 'Cancelar';
-
-    cargarDisponibilidad();
-}
-
-function cerrarModalCita() {
-    const overlay = document.getElementById('cita-overlay');
-    if (overlay) {
-        overlay.setAttribute('aria-hidden', 'true');
-        overlay.classList.remove('cita-open');
-        document.body.style.overflow = '';
-    }
-}
-
-async function cargarDisponibilidad() {
-    try {
-        const res = await fetch(`${API_BASE}/api/disponibilidad`);
-        if (!res.ok) throw new Error('Error del servidor');
-        const data = await res.json();
-        citaRawSlots = data.slots || {};
-
-        document.getElementById('cita-loading').style.display = 'none';
-
-        // Parse slots into date-keyed map
-        citaAvailableDates = {};
-        const monthSet = new Set();
-
-        for (const [label, slots] of Object.entries(citaRawSlots)) {
-            if (!slots.length) continue;
-            // Extract date from ISO string using Lima timezone
-            const firstDate = new Date(slots[0].start);
-            const dateKey = firstDate.toLocaleDateString('en-CA', { timeZone: 'America/Lima' }); // "YYYY-MM-DD"
-            citaAvailableDates[dateKey] = { label, slots };
-            monthSet.add(dateKey.substring(0, 7)); // "YYYY-MM"
-        }
-
-        citaMonths = Array.from(monthSet).sort();
-
-        if (citaMonths.length === 0) {
-            document.getElementById('cita-error-msg').textContent = 'No hay horarios disponibles en las próximas 2 semanas.';
-            document.getElementById('cita-error').style.display = 'block';
-            return;
-        }
-
-        citaCurrentMonthIdx = 0;
-        buildCalendarGrid(citaMonths[0]);
-
-        document.getElementById('cita-left-col').style.display = '';
-        document.getElementById('cita-right-col').style.display = '';
-        document.getElementById('cita-slots-container').innerHTML = '<p class="text-sm text-on-surface-variant text-center py-8 opacity-50">← Selecciona un día en el calendario</p>';
-    } catch (err) {
-        document.getElementById('cita-loading').style.display = 'none';
-        document.getElementById('cita-error-msg').textContent = 'No se pudo cargar la disponibilidad. Intenta más tarde.';
-        document.getElementById('cita-error').style.display = 'block';
-    }
-}
-
-function buildCalendarGrid(yearMonth) {
-    const [year, month] = yearMonth.split('-').map(Number);
-    const firstDay = new Date(year, month - 1, 1);
-    const totalDays = new Date(year, month, 0).getDate();
-
-    // Monday-start: Mon=0, Tue=1, ..., Sun=6
-    let startDow = firstDay.getDay(); // Sun=0, Mon=1, ..., Sat=6
-    startDow = (startDow + 6) % 7;   // Convert to Mon=0
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const grid = document.getElementById('cita-cal-grid');
-    let html = '';
-
-    // Empty cells before first day
-    for (let i = 0; i < startDow; i++) {
-        html += '<div class="cal-cell"></div>';
-    }
-
-    for (let d = 1; d <= totalDays; d++) {
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dateObj = new Date(year, month - 1, d);
-        const dow = dateObj.getDay();
-        const isWeekend = dow === 0 || dow === 6;
-        const isPast = dateObj < today;
-        const isAvailable = citaAvailableDates.hasOwnProperty(dateStr);
-        const isSelected = dateStr === citaSelectedDateStr;
-
-        let cls = 'cal-cell';
-        if (isWeekend) cls += ' cal-cell--weekend';
-        if (isPast && !isAvailable) cls += ' cal-cell--past';
-        if (isAvailable && !isPast) cls += ' cal-cell--available';
-        if (isSelected) cls += ' cal-cell--selected';
-
-        const disabled = (!isAvailable || isPast) ? 'disabled' : '';
-        const dot = (isAvailable && !isPast && !isSelected) ? '<div class="cal-dot"></div>' : '';
-
-        html += `<button type="button" class="${cls}" data-date="${dateStr}" ${disabled}>
-            <span class="text-sm font-medium">${d}</span>${dot}
-        </button>`;
-    }
-
-    grid.innerHTML = html;
-
-    // Month title
-    document.getElementById('cita-month-title').textContent = `${MONTH_NAMES_ES[month - 1]} ${year}`;
-
-    // Nav buttons
-    document.getElementById('cita-prev-month').disabled = citaCurrentMonthIdx <= 0;
-    document.getElementById('cita-next-month').disabled = citaCurrentMonthIdx >= citaMonths.length - 1;
-
-    // Click handlers for available days
-    grid.querySelectorAll('.cal-cell--available:not([disabled])').forEach(btn => {
-        btn.addEventListener('click', () => selectCalendarDay(btn.dataset.date));
-    });
-}
-
-function selectCalendarDay(dateStr) {
-    citaSelectedDateStr = dateStr;
-    citaSelectedSlot = null;
-    document.getElementById('cita-btn-confirmar').disabled = true;
-    document.getElementById('cita-summary-card').style.display = 'none';
-
-    // Rebuild calendar to update selection
-    buildCalendarGrid(citaMonths[citaCurrentMonthIdx]);
-
-    // Render time slots for this day
-    const dayData = citaAvailableDates[dateStr];
-    if (dayData) {
-        renderTimeSlots(dayData.slots);
-    }
-}
-
-function renderTimeSlots(slots) {
-    const morning = slots.filter(s => parseInt(s.hour) < 12);
-    const afternoon = slots.filter(s => parseInt(s.hour) >= 12);
-    let html = '';
-
-    if (morning.length > 0) {
-        html += `<div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block mb-3">Mañana</span>
-            <div class="grid grid-cols-3 gap-2 sm:gap-3">
-                ${morning.map(s => `<button type="button" class="slot-btn" data-start="${s.start}" data-end="${s.end}" data-hour="${s.hour}">${formatHour12(s.hour)}</button>`).join('')}
-            </div>
-        </div>`;
-    }
-
-    if (afternoon.length > 0) {
-        html += `<div>
-            <span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block mb-3">Tarde</span>
-            <div class="grid grid-cols-3 gap-2 sm:gap-3">
-                ${afternoon.map(s => `<button type="button" class="slot-btn" data-start="${s.start}" data-end="${s.end}" data-hour="${s.hour}">${formatHour12(s.hour)}</button>`).join('')}
-            </div>
-        </div>`;
-    }
-
-    if (!html) {
-        html = '<p class="text-sm text-on-surface-variant text-center py-8">No hay horarios disponibles este día.</p>';
-    }
-
-    const container = document.getElementById('cita-slots-container');
-    container.innerHTML = html;
-
-    container.querySelectorAll('.slot-btn').forEach(btn => {
-        btn.addEventListener('click', () => selectTimeSlot(btn));
-    });
-}
-
-function selectTimeSlot(btn) {
-    citaSelectedSlot = {
-        start: btn.dataset.start,
-        end: btn.dataset.end,
-        hour: btn.dataset.hour
-    };
-
-    // Update button states
-    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('activo'));
-    btn.classList.add('activo');
-
-    // Enable confirm
-    document.getElementById('cita-btn-confirmar').disabled = false;
-
-    // Show summary card
-    const summaryCard = document.getElementById('cita-summary-card');
-    const summaryText = document.getElementById('cita-summary-text');
-    summaryCard.style.display = '';
-    summaryText.textContent = `${formatDateLong(citaSelectedDateStr)} · ${formatHour12(citaSelectedSlot.hour)}`;
-}
-
-function navigateMonth(dir) {
-    const newIdx = citaCurrentMonthIdx + dir;
-    if (newIdx < 0 || newIdx >= citaMonths.length) return;
-    citaCurrentMonthIdx = newIdx;
-    buildCalendarGrid(citaMonths[citaCurrentMonthIdx]);
-}
-
-async function confirmarCita() {
-    if (!citaSelectedSlot || !citaSelectedDateStr) return;
-
-    const btn = document.getElementById('cita-btn-confirmar');
-
-    if (isCooldown('cita')) {
-        btn.textContent = 'ESPERÁ...';
-        setTimeout(() => { btn.textContent = 'CONFIRMAR REUNIÓN'; }, 3000);
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'AGENDANDO...';
-
-    const nombre = (document.getElementById('cita-nombre')?.value?.trim() || '').replace(/[<>"'`]/g, '').substring(0, 100);
-    const email = (document.getElementById('cita-email')?.value?.trim() || '').substring(0, 254);
-
-    if (!email || !validarEmail(email)) {
-        btn.textContent = 'CONFIRMAR REUNIÓN';
-        btn.disabled = false;
-        // Highlight email field
-        const emailField = document.getElementById('cita-email');
-        if (emailField) {
-            emailField.classList.add('ring-2', 'ring-error');
-            emailField.focus();
-            setTimeout(() => emailField.classList.remove('ring-2', 'ring-error'), 3000);
-        }
-        return;
-    }
-
-    // Build services summary
-    const servicios = [];
-    CATEGORIAS.forEach(cat => {
-        if (cat.id === 'personalizado' || !cat.servicios) return;
-        cat.servicios.forEach(s => {
-            if (document.getElementById(`chk-${s.key}`)?.checked) {
-                servicios.push(s.label);
-            }
-        });
-    });
-    itemsPersonalizados.forEach(i => servicios.push(i.nombre));
-
-    try {
-        const res = await fetch(`${API_BASE}/api/agendar-cita`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                nombre,
-                email,
-                fecha_inicio: citaSelectedSlot.start,
-                fecha_fin: citaSelectedSlot.end,
-                servicios: servicios.join(', '),
-            }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al agendar');
-
-        // Hide calendar columns, show confirmation
-        document.getElementById('cita-left-col').style.display = 'none';
-        document.getElementById('cita-right-col').style.display = 'none';
-        document.getElementById('cita-error').style.display = 'none';
-
-        const meetHtml = data.meetLink
-            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="cita-meet-link">🎥 Unirse a Google Meet</a>`
-            : '';
-
-        document.getElementById('cita-resumen').innerHTML = `
-            <span class="cita-success-icon">✅</span>
-            <h2 class="text-xl font-bold text-white mb-4">¡Reunión agendada!</h2>
-            <p class="text-on-surface-variant text-sm mb-6">Te enviamos una invitación con los detalles.</p>
-            <div class="bg-surface-container-high/50 rounded-xl p-5 text-left space-y-2 mb-4 inline-block">
-                <p class="text-sm"><span class="text-on-surface-variant">📅 Fecha:</span> <strong class="text-white">${sanitizeHTML(formatDateLong(citaSelectedDateStr))}</strong></p>
-                <p class="text-sm"><span class="text-on-surface-variant">🕐 Hora:</span> <strong class="text-white">${formatHour12(citaSelectedSlot.hour)}</strong></p>
-                <p class="text-sm"><span class="text-on-surface-variant">📧 Email:</span> <strong class="text-white">${sanitizeHTML(email)}</strong></p>
-            </div>
-            <br>${meetHtml}
-        `;
-        document.getElementById('cita-confirmacion').style.display = 'block';
-
-        btn.textContent = 'LISTO';
-        btn.disabled = true;
-        document.getElementById('cita-btn-cancelar').textContent = 'Cerrar';
-    } catch (err) {
-        const errorDiv = document.getElementById('cita-error');
-        document.getElementById('cita-error-msg').textContent = err.message;
-        errorDiv.style.display = 'block';
-        btn.textContent = 'CONFIRMAR REUNIÓN';
-        btn.disabled = false;
-    }
-}
-
-// ══════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
     // Render all services
-    renderServicios();
+    // El calendario no sabe nada de la calculadora: le pasamos que servicios viajan
+    // a la reunion, anotando cuales son mensuales. Quien atienda necesita saber si
+    // lo que el prospecto marco es una construccion o un compromiso que se repite.
+    fijarResumenServicios(() => {
+        const sel = recolectarSeleccion();
+        return sel.unico.map(i => i.nombre)
+            .concat(sel.mensual.map(i => i.nombre + ' (al mes)'));
+    });
+
+    renderCatalogo();
+    montarListeners();
     renderExtras();
+    renderPerfiles();
+    pintarFolio();
+
+    // Los recargos y la hoja escuchan una vez, sobre su contenedor
+    document.getElementById('extras-grid')?.addEventListener('click', e => {
+        const el = e.target.closest('[data-extra]');
+        if (el) alternarExtra(el);
+    });
+    document.getElementById('extras-grid')?.addEventListener('keydown', e => {
+        const el = e.target.closest('[data-extra]');
+        if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); alternarExtra(el); }
+    });
+    document.getElementById('perfil-buttons')?.addEventListener('click', e => {
+        const b = e.target.closest('[data-perfil]');
+        if (b) seleccionarPerfil(b.dataset.perfil);
+    });
+    document.getElementById('hoja-cuerpo')?.addEventListener('click', e => {
+        const q = e.target.closest('[data-quitar]');
+        if (q) { fijarSeleccion(q.dataset.quitar, false); actualizarHoja(); actualizarCuentas(); return; }
+        const qc = e.target.closest('[data-quitar-custom]');
+        if (qc) return eliminarItemPersonalizado(parseInt(qc.dataset.quitarCustom));
+        const qe = e.target.closest('[data-quitar-extra]');
+        if (qe) { const el = document.getElementById('ex-' + qe.dataset.quitarExtra); if (el) alternarExtra(el); }
+    });
+    // Agendar es la acción principal; en móvil vive en la barra flotante
+    document.getElementById('btn-agendar-movil')?.addEventListener('click', abrirModalCita);
 
     // Perfil buttons
-    document.querySelectorAll('.perfil-btn').forEach(btn => {
-        btn.addEventListener('click', () => seleccionarPerfil(btn.dataset.perfil));
-    });
 
     // Modal: Ajustes
     document.getElementById('btn-ajustes').addEventListener('click', abrirModalAjustes);
@@ -1506,8 +1039,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cita-prev-month')?.addEventListener('click', () => navigateMonth(-1));
     document.getElementById('cita-next-month')?.addEventListener('click', () => navigateMonth(1));
     document.getElementById('cita-retry-btn')?.addEventListener('click', () => {
-        document.getElementById('cita-error').style.display = 'none';
-        document.getElementById('cita-loading').style.display = 'flex';
+        document.getElementById('cita-error').hidden = true;
+        document.getElementById('cita-loading').hidden = false;
         cargarDisponibilidad();
     });
 
@@ -1521,12 +1054,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initial state
-    actualizarSidebar();
+    actualizarHoja();
     actualizarVistaAdmin();
-
-    // Interactive background
-    initMouseGlow();
-    initMathMeteors();
 
     // Reveal page
     document.body.classList.add('ready');

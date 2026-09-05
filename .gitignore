@@ -8,3 +8,8 @@ node_modules/
 # Credenciales — NUNCA subir al repo
 config/credentials.js
 *.json.bak
+
+.vercel
+
+# Estado transitorio de las paginas de decision de impeccable
+.impeccable/questions/

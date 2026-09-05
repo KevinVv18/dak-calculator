@@ -1,447 +1,392 @@
 <!DOCTYPE html>
-<html class="dark" lang="es">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora DAK - Negociadora</title>
-    <meta name="description" content="Calculadora de cotización de servicios DAK">
+    <title>Calculadora DAK — cuánto cuesta, una vez y cada mes</title>
+    <meta name="description" content="Arma tu presupuesto con DAK Agency y mira por separado lo que se paga una vez y lo que se paga cada mes.">
+    <meta name="theme-color" content="#E4E0EB">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <link rel="shortcut icon" href="assets/favicon.svg">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/styles.css?v=7">
-    <link rel="stylesheet" href="css/agendar.css?v=1">
-    <style>body{opacity:0}body.ready{opacity:1;transition:opacity .2s ease}</style>
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "surface-bright": "#322939",
-                        "surface-variant": "#2b2232",
-                        "tertiary": "#85b9ff",
-                        "secondary": "#5ff8f8",
-                        "tertiary-dim": "#5ca0f3",
-                        "surface-dim": "#120c16",
-                        "surface": "#120c16",
-                        "secondary-container": "#006a6a",
-                        "primary-dim": "#b023ff",
-                        "outline-variant": "#4d4552",
-                        "on-surface": "#f9edfd",
-                        "outline": "#7b7280",
-                        "surface-container-high": "#241d2b",
-                        "surface-container-lowest": "#000000",
-                        "surface-tint": "#d692ff",
-                        "on-surface-variant": "#b2a7b6",
-                        "background": "#120c16",
-                        "on-error-container": "#ffb2b9",
-                        "surface-container-highest": "#2b2232",
-                        "primary-container": "#ce7eff",
-                        "on-primary-container": "#3a005a",
-                        "surface-container": "#1e1724",
-                        "inverse-primary": "#9400dc",
-                        "error": "#ff6e84",
-                        "primary": "#d692ff",
-                        "error-dim": "#d73357",
-                        "surface-container-low": "#17111c",
-                    },
-                    fontFamily: {
-                        headline: ["Inter", "sans-serif"],
-                        body: ["Inter", "sans-serif"],
-                        label: ["Inter", "sans-serif"],
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="preload" href="assets/fuentes/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/tokens.css?v=9">
+    <link rel="stylesheet" href="css/base.css?v=9">
+    <link rel="stylesheet" href="css/cotizacion.css?v=9">
 </head>
 
-<body class="bg-surface-container-lowest min-h-screen relative font-body selection:bg-primary-dim selection:text-white text-on-surface">
+<body>
+<!--
+  THESIS: Esta superficie es la cotización escribiéndose delante del prospecto, no
+  una página de precios. Rechaza la rejilla de tarjetas de plan con toggle
+  mensual/anual que envía toda la categoría.
+  OWN-WORLD: Papel sobre escritorio. Mesa #E4E0EB con fibra de feTurbulence en
+  multiply, hojas #FFFFFF con su propia trama y sombra de contacto. Estructura por
+  filetes de 1px, esquinas casi rectas, Poppins autoalojada, importes siempre a la
+  derecha. Morado #7A00C2 en superficies y #6D00AF en texto; teal #00625F solo como
+  unidad /mes. La versión sobre #030106 se descartó: el fondo oscuro con lavado
+  morado venía de la marca, no del mundo, y era lo que lo hacía indistinguible.
+  STORY: El dueño de un negocio en Chiclayo entiende en segundos que hay dos cifras
+  distintas —una vez y cada mes—, y agenda una reunión.
+  FIRST VIEWPORT: Izquierda, el tarifario como índice de partidas regladas. Derecha,
+  la hoja con membrete, referencia y fecha, dos bloques cerrados con su total, el
+  sello REFERENCIAL en borde, y agendar como acción principal.
+  MISMO MUNDO EN LA AGENDA: agendar.html y el overlay comparten markup y CSS. Son la
+  solicitud de reunión —membrete propio, calendario como tabla reglada de talonario,
+  constancia sellada al confirmar—, no una capa de otro sistema encima.
+  FORM: «La cotización», candidata 4 de la lista ordenada por resonancia. Semilla
+  fe129161, índice asignado 4.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish
+  review, the verdict, and DESIGN.md
+-->
+    <!-- Iconos: SVG dibujados, un solo grosor de trazo. Sustituyen a la fuente
+         Material Symbols (cientos de KB para quince glifos, y las ligaduras se
+         veian como palabras sueltas antes de que cargara) y a los emoji, que no
+         son un sistema de iconos. -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+      <defs>
+        <!-- Mordida de tinta: desplaza el trazo lo justo para que el borde del
+             sello no sea perfecto, como cuando el tampon pisa el papel. -->
+        <filter id="tinta" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="ruido"/>
+          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></symbol>
+        <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6 18 18M18 6 6 18"/></symbol>
+        <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-menos" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+        <symbol id="i-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="i-arriba" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+        <symbol id="i-izq" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+        <symbol id="i-der" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+        <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+        <symbol id="i-correo" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/></symbol>
+        <symbol id="i-candado" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></symbol>
+        <symbol id="i-salir" viewBox="0 0 24 24"><path d="M9.5 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3.5M16 16.5 20.5 12 16 7.5M20.5 12H10"/></symbol>
+        <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h14"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11.5v5M12 7.8v.4"/></symbol>
+        <symbol id="i-documento" viewBox="0 0 24 24"><path d="M6 3h8l4.5 4.5V21H6z"/><path d="M14 3v5h4.5M9 12.5h6M9 16.5h4"/></symbol>
+        <symbol id="i-vacio" viewBox="0 0 24 24"><path d="M6 3h8l4.5 4.5V21H6z"/><path d="M14 3v5h4.5"/></symbol>
+        <symbol id="i-aviso" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5.5M12 16.2v.3"/></symbol>
+        <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 11 5.5-3v8l-5.5-3z"/></symbol>
+        <symbol id="i-diseno" viewBox="0 0 24 24"><path d="M4 20 9 9l5 5-10 6z"/><path d="m12 6.5 5.5 5.5M14.5 4l5.5 5.5-2.5 2.5L12 6.5z"/></symbol>
+        <symbol id="i-web" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 9h18M6.5 6.7h.4M9 6.7h.4"/></symbol>
+        <symbol id="i-marketing" viewBox="0 0 24 24"><path d="M4 20V13M9.5 20V8M15 20v-8.5M20.5 20V4"/></symbol>
+        <symbol id="i-automatizacion" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 4v4M8.5 13v1.5M15.5 13v1.5"/></symbol>
+        <symbol id="i-libre" viewBox="0 0 24 24"><path d="M4 20h16M5.5 15.5 15 6a2.1 2.1 0 0 1 3 3l-9.5 9.5-4 1 1-4z"/></symbol>
+      </defs>
+    </svg>
 
-    <!-- ═══ Animated Background ═══ -->
-    <div class="orb w-[500px] h-[500px] bg-primary-dim top-[-100px] left-[-100px]" aria-hidden="true"></div>
-    <div class="orb w-[600px] h-[600px] bg-secondary bottom-[-200px] right-[-100px]" aria-hidden="true"></div>
-    <div class="orb w-[400px] h-[400px] bg-tertiary top-[40%] right-[10%]" aria-hidden="true"></div>
-    <div class="bg-grid fixed inset-0 z-0" aria-hidden="true"></div>
-
-    <!-- ═══ Interactive Background: Mouse Glow ═══ -->
-    <div id="mouse-glow" class="mouse-glow" aria-hidden="true"></div>
-
-    <!-- ═══ Interactive Background: Math Meteors Container ═══ -->
-    <div id="meteor-container" class="meteor-container" aria-hidden="true"></div>
-
-    <!-- ═══ Header ═══ -->
-    <header class="fixed top-0 w-full z-50 bg-[#030106]/80 backdrop-blur-xl shadow-[0_4px_24px_rgba(176,36,255,0.1)]">
-        <div class="flex justify-between items-center px-4 sm:px-8 py-3 max-w-[1600px] mx-auto">
-            <div class="flex items-center gap-3 sm:gap-5">
+    <header class="cabecera">
+        <div class="cabecera__fila">
+            <div class="cabecera__marca">
                 <a href="https://dakagency.net" target="_blank" rel="noopener noreferrer">
-                    <img class="h-8 sm:h-9 w-auto" src="assets/logo.svg" alt="DAK">
+                    <img class="cabecera__logo" src="assets/logo.svg" alt="DAK Agency">
                 </a>
-                <span class="h-6 w-px bg-outline-variant/30 hidden sm:block"></span>
-                <a href="https://plan.dakagency.net" class="hover:opacity-80 transition-opacity">
-                    <h1 class="text-lg sm:text-xl font-black tracking-tight text-white uppercase italic">CALCULADORA</h1>
-                </a>
+                <span class="cabecera__sep" aria-hidden="true"></span>
+                <span class="cabecera__titulo">Calculadora</span>
             </div>
-            <div class="flex gap-1 items-center">
-                <a href="agendar.html" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary-dim/30 bg-primary-dim/10 text-primary-dim text-xs font-semibold hover:bg-primary-dim/20 hover:border-primary-dim/50 transition-all mr-1" title="Agendar reunión gratuita">
-                    <span class="material-symbols-outlined text-base">calendar_today</span>
-                    <span>Agendar</span>
-                </a>
-                <button type="button" id="btn-admin-login" class="p-2 text-on-surface-variant hover:text-white transition-colors rounded-lg hover:bg-white/5" title="Login Admin" aria-label="Login Admin">
-                    <span class="material-symbols-outlined text-xl">lock</span>
+            <div class="cabecera__acciones">
+                <button type="button" id="btn-admin-login" class="boton-icono" title="Acceso del equipo DAK" aria-label="Acceso del equipo DAK">
+                    <svg class="icono" aria-hidden="true"><use href="#i-candado"></use></svg>
                 </button>
-                <button type="button" id="btn-ajustes" class="p-2 text-on-surface-variant hover:text-white transition-colors rounded-lg hover:bg-white/5" title="Ajustes de precios" aria-label="Ajustes" style="display:none">
-                    <span class="material-symbols-outlined text-xl">settings</span>
+                <button type="button" id="btn-ajustes" class="boton-icono" title="Ajustes de precios" aria-label="Ajustes de precios" hidden>
+                    <svg class="icono" aria-hidden="true"><use href="#i-ajustes"></use></svg>
                 </button>
-                <button type="button" id="btn-logout" class="p-2 text-primary-dim hover:text-white transition-colors rounded-lg hover:bg-white/5" title="Cerrar sesión" aria-label="Cerrar sesión" style="display:none">
-                    <span class="material-symbols-outlined text-xl">logout</span>
+                <button type="button" id="btn-logout" class="boton-icono" title="Cerrar sesión" aria-label="Cerrar sesión" hidden>
+                    <svg class="icono" aria-hidden="true"><use href="#i-salir"></use></svg>
                 </button>
             </div>
         </div>
-        <div class="h-px w-full bg-gradient-to-r from-transparent via-primary-dim/20 to-transparent"></div>
     </header>
 
-    <!-- ═══ Main Content ═══ -->
-    <main class="relative z-10 pt-20 sm:pt-24 pb-24 sm:pb-12 px-4 sm:px-8 max-w-[1600px] mx-auto">
-        <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
 
-            <!-- ── Left Column: Services ── -->
-            <div class="w-full lg:w-[63%] space-y-10" id="servicios-container">
-                <!-- JS renders all category sections here -->
+    <!-- Modo Persuade: quien llega desde un enlace de WhatsApp se encontraba una
+         lista de 34 casillas sin una sola frase que dijera qué es esto. Y la tesis
+         de la página —que hay DOS cifras— se enunciaba solo después de elegir algo. -->
+    <section class="portada">
+        <h1 class="portada__titulo">Armá tu presupuesto en dos minutos</h1>
+        <p class="portada__bajada">Elegí lo que necesitás y vas a ver dos cifras por
+            separado: <strong>lo que se paga una vez</strong> y <strong class="mes">lo que
+            se paga cada mes</strong>. La pauta va aparte y se paga directo a Meta.</p>
+    </section>
+
+    <main class="obra">
+        <!-- El catálogo lo pinta calculator.js desde CATEGORIAS -->
+        <div id="catalogo"></div>
+
+        <aside class="hoja" id="hoja">
+            <!-- Membrete. Un documento no se presenta con una palabra suelta: lleva
+                 emisor, tipo de documento y sus datos en un bloque tabulado. Esto es
+                 lo que separa una hoja de cotización de un panel con un título. -->
+            <div class="hoja__encabezado">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
+                <h2 class="hoja__titulo">Cotización</h2>
+                <dl class="membrete">
+                    <div class="membrete__par">
+                        <dt>Referencia</dt>
+                        <dd id="folio-ref">—</dd>
+                    </div>
+                    <div class="membrete__par">
+                        <dt>Fecha</dt>
+                        <dd id="folio-fecha">—</dd>
+                    </div>
+                    <div class="membrete__par">
+                        <dt>Importes</dt>
+                        <dd>Referenciales</dd>
+                    </div>
+                </dl>
             </div>
 
-            <!-- ── Right Column: Sticky Sidebar ── -->
-            <aside class="w-full lg:w-[37%] lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)]" id="sidebar">
-                <div class="sidebar-glass rounded-2xl border border-outline-variant/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overscroll-contain sidebar-scroll">
+            <div class="hoja__cuerpo" id="hoja-cuerpo">
+                <p class="hoja__vacia" id="hoja-vacia">
+                    <svg class="icono" aria-hidden="true"><use href="#i-vacio"></use></svg>
+                    Todavía no hay partidas.<br>En cuanto elijas una, acá aparecen<br>los dos totales por separado.
+                </p>
 
-                    <!-- Sidebar Header -->
-                    <div class="px-5 py-4 border-b border-outline-variant/10 bg-surface-container-low/50">
-                        <h2 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary-dim text-xl">receipt_long</span>
-                            Tu cotización
-                        </h2>
+                <!-- Un bloque vacío no se dibuja: un «S/ 0 /mes» es peor que un hueco -->
+                <section class="bloque bloque--unico" id="bloque-unico" hidden>
+                    <h2 class="bloque__rotulo"><span>Pago único</span></h2>
+                    <div id="lista-unico"></div>
+                </section>
+
+                <section class="bloque bloque--mes" id="bloque-mensual" hidden>
+                    <h2 class="bloque__rotulo"><span>Cada mes</span></h2>
+                    <div id="lista-mensual"></div>
+                </section>
+
+                <section class="bloque" id="bloque-extras">
+                    <h2 class="bloque__rotulo"><span>Recargos de producción</span></h2>
+                    <div id="extras-grid"></div>
+                </section>
+
+                <!-- Solo para el equipo DAK -->
+                <section class="bloque" id="perfil-section" hidden>
+                    <h2 class="bloque__rotulo"><span>Perfil del cliente</span></h2>
+                    <div class="detalle" id="perfil-buttons"></div>
+                    <div class="bloque__suma" id="row-perfil" hidden>
+                        <span class="bloque__suma-rotulo" id="label-perfil">Perfil</span>
+                        <span class="anotacion__importe" id="sidebar-perfil-total">S/ 0</span>
                     </div>
+                </section>
+            </div>
 
-                    <!-- Selected Items List -->
-                    <div class="sidebar-items-scroll max-h-[260px] overflow-y-auto px-5 py-4" id="sidebar-items">
-                        <div class="sidebar-empty flex flex-col items-center justify-center py-6 opacity-30" id="sidebar-empty">
-                            <span class="material-symbols-outlined text-4xl mb-2">shopping_cart</span>
-                            <p class="text-xs text-center">Seleccioná servicios<br>para comenzar</p>
-                        </div>
-                    </div>
-
-                    <!-- Extras Section -->
-                    <div class="px-5 py-4 bg-surface-container/30 border-t border-outline-variant/5">
-                        <h3 class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-3">Extras opcionales</h3>
-                        <div id="extras-grid" class="space-y-1"></div>
-                    </div>
-
-                    <!-- Totals Breakdown -->
-                    <div class="px-5 py-4 bg-surface-container-high/40 border-t border-outline-variant/5">
-                        <div class="space-y-2 mb-4">
-                            <div class="flex justify-between text-xs text-on-surface-variant">
-                                <span>Subtotal</span>
-                                <span id="sidebar-subtotal">S/ 0</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-on-surface-variant" id="row-perfil" style="display:none">
-                                <span id="label-perfil">× Perfil Inicial (1x)</span>
-                                <span id="sidebar-perfil-total">S/ 0</span>
-                            </div>
-                            <div class="flex justify-between text-xs text-on-surface-variant">
-                                <span>Extras</span>
-                                <span id="sidebar-extras-total">S/ 0</span>
-                            </div>
-                            <div class="flex justify-between items-center pt-3 border-t border-outline-variant/10">
-                                <span class="text-sm font-bold uppercase tracking-tight">Total Final</span>
-                                <span class="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-dim to-secondary" id="sidebar-total">S/ 0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Profile Selector (admin only) -->
-                    <div class="px-5 py-4 border-t border-outline-variant/5" id="perfil-section" style="display:none">
-                        <h3 class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-3">Perfil del cliente</h3>
-                        <div class="grid grid-cols-3 gap-2" id="perfil-buttons">
-                            <button type="button" data-perfil="bajo" class="perfil-btn perfil-btn--activo">
-                                <span class="text-xs font-semibold">Inicial</span>
-                                <span class="text-[10px] text-on-surface-variant">×1.0</span>
-                            </button>
-                            <button type="button" data-perfil="medio" class="perfil-btn">
-                                <span class="text-xs font-semibold">Crecimiento</span>
-                                <span class="text-[10px] text-on-surface-variant">×1.2</span>
-                            </button>
-                            <button type="button" data-perfil="alto" class="perfil-btn">
-                                <span class="text-xs font-semibold">Corp.</span>
-                                <span class="text-[10px] text-on-surface-variant">×1.5</span>
-                            </button>
-                        </div>
-                        <select id="perfil-cliente" style="display:none" aria-hidden="true">
-                            <option value="bajo">Inicial</option>
-                            <option value="medio">Crecimiento</option>
-                            <option value="alto">Corporativo</option>
-                        </select>
-                    </div>
-
-                    <!-- Client Info + Actions -->
-                    <div class="px-5 py-4 space-y-3 border-t border-outline-variant/5">
-                        <input type="text" id="nombre-cliente" class="w-full bg-surface-container-lowest/80 border border-outline-variant/15 rounded-lg px-3 py-2.5 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim focus:border-primary-dim transition-all" placeholder="Nombre del cliente" maxlength="100">
-                        <input type="email" id="email-cliente" class="w-full bg-surface-container-lowest/80 border border-outline-variant/15 rounded-lg px-3 py-2.5 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim focus:border-primary-dim transition-all" placeholder="Email del cliente">
-
-                        <!-- Presupuesto toggle -->
-                        <label class="flex items-center justify-between py-1 cursor-pointer group" id="label-aprox">
-                            <div class="flex items-center gap-1.5">
-                                <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">Presupuesto aproximado</span>
-                                <span class="material-symbols-outlined text-on-surface-variant/40 text-sm" id="icon-lock-aprox" style="font-size:14px">lock</span>
-                            </div>
-                            <div class="relative inline-flex items-center">
-                                <input type="checkbox" id="chk-aprox" checked class="sr-only peer">
-                                <div class="w-9 h-5 bg-surface-container-highest rounded-full peer peer-checked:bg-primary-dim after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full transition-colors"></div>
-                            </div>
-                        </label>
-                        <div class="tooltip-dak hidden text-xs text-error" id="tooltip-aprox">🔒 No tienes permisos de admin.</div>
-
-                        <!-- Optional message -->
-                        <details class="group">
-                            <summary class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide cursor-pointer hover:text-white transition-colors flex items-center gap-1">
-                                <span class="material-symbols-outlined text-sm transition-transform group-open:rotate-90">chevron_right</span>
-                                Mensaje personalizado
-                            </summary>
-                            <textarea id="email-mensaje" rows="2" class="mt-2 w-full bg-surface-container-lowest/80 border border-outline-variant/15 rounded-lg px-3 py-2 text-sm text-white placeholder-on-surface-variant/50 focus:outline-none focus:ring-1 focus:ring-primary-dim resize-none transition-all" placeholder="Mensaje para el cliente..."></textarea>
-                        </details>
-
-                        <!-- Send Quote -->
-                        <button type="button" id="btn-enviar" class="w-full py-3.5 bg-primary-dim text-white font-bold text-xs uppercase tracking-widest rounded-xl shadow-[0_8px_32px_rgba(176,36,255,0.3)] hover:shadow-[0_8px_40px_rgba(176,36,255,0.5)] hover:scale-[1.02] active:scale-95 transition-all">
-                            Enviar cotización por email
-                        </button>
-                        <p class="text-xs text-center" id="email-feedback"></p>
-
-                        <!-- Schedule Meeting -->
-                        <button type="button" id="btn-agendar" class="w-full py-3 border border-outline-variant/30 text-on-surface-variant font-bold text-xs uppercase tracking-widest rounded-xl hover:text-white hover:border-primary-dim/50 transition-all flex items-center justify-center gap-2">
-                            <span class="material-symbols-outlined text-base">calendar_month</span>
-                            Agendar reunión
-                        </button>
-
-                        <p class="text-[9px] text-center text-on-surface-variant/60 mt-2 leading-relaxed">
-                            * Los precios son referenciales y pueden variar según los requerimientos específicos del proyecto.
-                        </p>
-                    </div>
+            <!-- Las dos cifras no pueden quedar debajo del scroll: son el motivo
+                 de que esta página exista. Se fijan; lo que se desplaza es el detalle. -->
+            <div class="hoja__totales" id="hoja-totales">
+                <div class="total" id="total-fila-unico">
+                    <span class="total__rotulo">Se paga una vez</span>
+                    <span class="total__cifra" id="total-unico">—</span>
                 </div>
-            </aside>
-        </div>
+                <div class="total total--mes" id="total-fila-mensual">
+                    <span class="total__rotulo">Se paga cada mes</span>
+                    <span class="total__cifra" id="total-mensual">—</span>
+                </div>
+                <span class="sello" id="sello">Referencial</span>
+            </div>
+
+            <!-- El pie ocupaba 490px del panel y ahogaba el cuerpo de la hoja, que se
+                 quedaba en 230px: el bloque CADA MES no llegaba a enseñar ni una línea
+                 entera. Agendar es LA acción, así que se queda sola; el envío por email
+                 es secundario y se pliega. Además el candado de «referencial» era un
+                 control con llave que el prospecto no puede usar: solo lo ve el equipo. -->
+            <div class="hoja__pie">
+                <button type="button" id="btn-agendar" class="accion accion--principal">
+                    <svg class="icono" aria-hidden="true"><use href="#i-calendario"></use></svg>
+                    Agendar reunión
+                </button>
+
+                <details class="envio">
+                    <summary class="envio__resumen">
+                        <svg class="icono icono--sm" aria-hidden="true"><use href="#i-correo"></use></svg>
+                        Prefiero recibirlo por email
+                    </summary>
+                    <div class="envio__cuerpo">
+                        <input type="text" id="nombre-cliente" class="campo-texto" placeholder="Tu nombre" maxlength="100" autocomplete="name">
+                        <input type="email" id="email-cliente" class="campo-texto" placeholder="Tu email" autocomplete="email">
+                        <textarea id="email-mensaje" rows="2" class="campo-texto" placeholder="Contanos brevemente qué necesitás"></textarea>
+                        <button type="button" id="btn-enviar" class="accion accion--segunda">Enviarme el presupuesto</button>
+                        <p class="nota" id="email-feedback" role="status"></p>
+                    </div>
+                </details>
+
+                <label class="nota envio__sello" id="label-aprox" hidden>
+                    <input type="checkbox" id="chk-aprox" checked class="sr-solo">
+                    <svg class="icono icono--sm" id="icon-lock-aprox" aria-hidden="true"><use href="#i-candado"></use></svg>
+                    <span>Marcar como cotización oficial</span>
+                </label>
+                <p class="nota" id="tooltip-aprox" hidden></p>
+
+                <p class="nota">Los importes son una referencia y se ajustan al alcance real del proyecto.</p>
+            </div>
+        </aside>
     </main>
 
-    <!-- ═══ Mobile Floating Total ═══ -->
-    <div class="fixed bottom-0 left-0 right-0 z-40 lg:hidden" id="mobile-total">
-        <div class="flex items-center justify-between px-6 py-4 bg-surface-container-high border-t-2 border-primary-dim/50 shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
-            <span class="text-xs font-bold uppercase tracking-wide text-on-surface-variant">Total estimado</span>
-            <span class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-dim to-secondary" id="mobile-total-value">S/ 0</span>
+    <!-- Barra flotante en móvil: dos cifras, nunca una combinada -->
+    <div class="barra" id="barra">
+        <div class="barra__cifras">
+            <span class="barra__dato" id="barra-dato-unico">
+                <span class="barra__rotulo">Una vez</span>
+                <span class="barra__cifra" id="barra-unico">—</span>
+            </span>
+            <span class="barra__dato" id="barra-dato-mensual">
+                <span class="barra__rotulo">Cada mes</span>
+                <span class="barra__cifra barra__cifra--mes" id="barra-mensual">—</span>
+            </span>
         </div>
+        <button type="button" class="accion accion--principal" id="btn-agendar-movil">
+            <svg class="icono" aria-hidden="true"><use href="#i-calendario"></use></svg>
+            Agendar
+        </button>
     </div>
 
-    <!-- ═══ Full-Screen: Agendar Cita ═══ -->
-    <div id="cita-overlay" class="cita-overlay" role="dialog" aria-labelledby="cita-titulo" aria-hidden="true">
-        <!-- Ambient orbs for scheduling screen -->
-        <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-            <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary-dim orb-blur rounded-full"></div>
-            <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary orb-blur rounded-full"></div>
-        </div>
-
-        <!-- Header -->
-        <header class="fixed top-0 w-full z-20 bg-[#030106]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(176,36,255,0.15)]">
-            <div class="flex justify-between items-center px-4 sm:px-8 py-4 sm:py-5 w-full max-w-6xl mx-auto">
-                <div class="flex items-center gap-4 sm:gap-5">
-                    <div class="flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-primary-dim/10 text-primary-dim">
-                        <span class="material-symbols-outlined text-2xl">calendar_today</span>
-                    </div>
-                    <div>
-                        <h1 id="cita-titulo" class="font-black tracking-tight text-xl sm:text-2xl text-white">Agendar reunión</h1>
-                        <div class="flex gap-1.5 sm:gap-2 mt-1.5 flex-wrap">
-                            <span class="cita-badge">60 min</span>
-                            <span class="cita-badge">Google Meet</span>
-                            <span class="cita-badge cita-badge--teal">Gratis</span>
-                            <span class="cita-badge">Lambayeque, PE</span>
-                        </div>
-                    </div>
+    <!-- ══ Agendar: pantalla completa ══ -->
+    <div id="cita-overlay" class="agenda" role="dialog" aria-labelledby="cita-titulo" aria-hidden="true" hidden>
+        <header class="cabecera">
+            <div class="cabecera__fila">
+                <div class="cabecera__marca">
+                    <img class="cabecera__logo" src="assets/logo.svg" alt="DAK Agency">
+                    <span class="cabecera__sep" aria-hidden="true"></span>
+                    <span class="cabecera__titulo">Agenda</span>
                 </div>
-                <button type="button" id="cita-cerrar-btn" class="p-2.5 text-on-surface-variant hover:bg-white/5 transition-colors rounded-full active:scale-95" aria-label="Cerrar">
-                    <span class="material-symbols-outlined">close</span>
+                <button type="button" id="cita-cerrar-btn" class="boton-icono" aria-label="Cerrar">
+                    <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
                 </button>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="cita-main">
-            <!-- Loading -->
-            <div id="cita-loading" class="w-full flex flex-col items-center justify-center py-20">
-                <div class="cita-spinner-lg"></div>
-                <span class="text-sm text-on-surface-variant mt-4">Cargando disponibilidad...</span>
+        <main class="agenda__cuerpo">
+            <!-- Membrete, igual que la hoja de cotizacion. Antes aqui habia un titulo
+                 y una linea con cuatro datos pegados y con una clase que no existia en
+                 el CSS, asi que se pintaba como parrafo suelto. Un documento presenta
+                 sus datos en pares tabulados. -->
+            <div class="agenda__membrete">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
+                <h2 id="cita-titulo" class="hoja__titulo">Reunión de diagnóstico</h2>
+                <dl class="membrete">
+                    <div class="membrete__par"><dt>Duración</dt><dd>60 minutos</dd></div>
+                    <div class="membrete__par"><dt>Modalidad</dt><dd>Google Meet</dd></div>
+                    <div class="membrete__par"><dt>Horario</dt><dd>Lambayeque (GMT-5)</dd></div>
+                    <div class="membrete__par"><dt>Coste</dt><dd>Sin coste</dd></div>
+                </dl>
             </div>
 
-            <!-- Error -->
-            <div id="cita-error" class="w-full" style="display:none">
-                <div class="glass-panel p-8 rounded-2xl border border-white/5 text-center max-w-md mx-auto">
-                    <span class="material-symbols-outlined text-4xl text-error mb-3 block">error_outline</span>
-                    <p class="text-sm text-error" id="cita-error-msg">No se pudo cargar la disponibilidad.</p>
-                    <button type="button" id="cita-retry-btn" class="mt-4 px-5 py-2 text-xs font-bold uppercase tracking-widest border border-outline-variant/30 text-on-surface-variant hover:text-white hover:border-primary-dim/50 rounded-lg transition-all">Reintentar</button>
-                </div>
+            <p id="cita-loading" class="hoja__vacia">Cargando disponibilidad…</p>
+
+            <div id="cita-error" class="hoja__vacia" hidden>
+                <p class="nota nota--error" id="cita-error-msg">No se pudo cargar la disponibilidad.</p>
+                <button type="button" id="cita-retry-btn" class="accion accion--segunda agenda__reintentar">Reintentar</button>
             </div>
 
-            <!-- Left Column: Calendar + Form -->
-            <section id="cita-left-col" class="w-full lg:w-[55%] space-y-6" style="display:none">
-                <!-- Calendar -->
-                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 shadow-2xl">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-bold tracking-tight" id="cita-month-title">—</h3>
-                        <div class="flex gap-3">
-                            <button type="button" id="cita-prev-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-                                <span class="material-symbols-outlined text-sm">chevron_left</span>
-                            </button>
-                            <button type="button" id="cita-next-month" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-                                <span class="material-symbols-outlined text-sm">chevron_right</span>
-                            </button>
-                        </div>
+            <section id="cita-left-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">1</span><span>Elegí el día</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+
+                <div class="agenda__mes">
+                    <p class="agenda__mes-nombre" id="cita-month-title">—</p>
+                    <div class="agenda__nav">
+                        <button type="button" id="cita-prev-month" class="boton-icono" aria-label="Mes anterior">
+                            <svg class="icono" aria-hidden="true"><use href="#i-izq"></use></svg>
+                        </button>
+                        <button type="button" id="cita-next-month" class="boton-icono" aria-label="Mes siguiente">
+                            <svg class="icono" aria-hidden="true"><use href="#i-der"></use></svg>
+                        </button>
                     </div>
-                    <!-- Day headers -->
-                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2 text-center text-on-surface-variant text-[11px] font-bold uppercase tracking-widest mb-3">
-                        <div>Lu</div><div>Ma</div><div>Mi</div><div>Ju</div><div>Vi</div><div class="text-white/20">Sá</div><div class="text-white/20">Do</div>
-                    </div>
-                    <!-- Calendar grid -->
-                    <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="cita-cal-grid"></div>
                 </div>
 
-                <!-- Contact Details -->
-                <div class="space-y-4">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-primary-dim">Detalles del contacto</h3>
-                    <div class="space-y-3">
-                        <input id="cita-nombre" type="text" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="Tu nombre completo" maxlength="100">
-                        <input id="cita-email" type="email" class="w-full bg-surface-container-highest/50 border-0 rounded-xl px-4 py-3.5 text-on-surface placeholder:text-on-surface-variant/60 focus:ring-2 focus:ring-primary-dim/50 transition-all outline-none text-sm" placeholder="tu@email.com">
+                <!-- Tabla reglada, como el calendario de un talonario: las celdas
+                     sombreadas son los dias cerrados y las blancas los que quedan
+                     libres. Es la lectura de un impreso, no un mosaico de botones. -->
+                <div class="agenda__tabla">
+                    <div class="agenda__dias-rotulo" aria-hidden="true">
+                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
                     </div>
+                    <div class="agenda__rejilla" id="cita-cal-grid"></div>
+                </div>
+
+            </section>
+
+            <section id="cita-right-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">2</span><span>Elegí la hora</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div id="cita-slots-container" class="agenda__horas-caja">
+                    <p class="nota">Elegí un día en el calendario.</p>
+                </div>
+                <div id="cita-summary-card" class="aviso" hidden>
+                    <svg class="icono" aria-hidden="true"><use href="#i-check"></use></svg>
+                    <span id="cita-summary-text">—</span>
                 </div>
             </section>
 
-            <!-- Right Column: Time Slots -->
-            <section id="cita-right-col" class="w-full lg:w-[45%] flex flex-col" style="display:none">
-                <div class="glass-panel p-5 sm:p-8 rounded-2xl border border-white/5 flex-1 flex flex-col">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-bold tracking-tight mb-1">Horarios disponibles</h3>
-                        <p class="text-xs font-light text-on-surface-variant italic">Zona horaria: America/Lima · Lambayeque, PE (GMT-5)</p>
-                    </div>
-                    <div id="cita-slots-container" class="space-y-6 overflow-y-auto pr-2 sidebar-scroll flex-1">
-                        <p class="text-sm text-on-surface-variant text-center py-8 opacity-50">← Selecciona un día en el calendario</p>
-                    </div>
-                    <!-- Summary Selection Card -->
-                    <div id="cita-summary-card" class="mt-auto pt-6 border-t border-white/10" style="display:none">
-                        <div class="bg-secondary-dim/10 rounded-xl p-4 flex items-center gap-4 border border-secondary-dim/20">
-                            <div class="w-10 h-10 rounded-lg bg-secondary-dim flex items-center justify-center text-[#004747] flex-shrink-0">
-                                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">schedule</span>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase tracking-[0.1em] text-secondary-dim">Reunión seleccionada</p>
-                                <p class="text-sm font-bold text-white" id="cita-summary-text">—</p>
-                            </div>
-                        </div>
-                    </div>
+            <section id="cita-datos-col" class="agenda__panel agenda__panel--ancho" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">3</span><span>Tus datos</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div class="agenda__datos">
+                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
+                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
+                    <label class="campo__rotulo" for="cita-email">Tu email</label>
+                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
                 </div>
             </section>
 
-            <!-- Confirmation Screen -->
-            <div id="cita-confirmacion" class="w-full" style="display:none">
-                <div class="glass-panel p-8 sm:p-10 rounded-2xl border border-white/5 text-center max-w-lg mx-auto">
-                    <div id="cita-resumen"></div>
-                </div>
+            <div id="cita-confirmacion" class="agenda__panel agenda__panel--constancia" hidden>
+                <div id="cita-resumen"></div>
             </div>
         </main>
 
-        <!-- Footer -->
-        <footer class="fixed bottom-0 w-full z-20 bg-[#030106]/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
-            <div class="flex justify-end items-center gap-4 px-4 sm:px-12 py-4 sm:py-5 w-full max-w-6xl mx-auto">
-                <button type="button" id="cita-btn-cancelar" class="text-on-surface-variant hover:text-white px-4 sm:px-6 py-2 font-light text-sm uppercase tracking-widest transition-all active:scale-[0.98]">
-                    Cancelar
-                </button>
-                <button type="button" id="cita-btn-confirmar" class="bg-primary-dim text-white rounded-lg px-6 sm:px-8 py-3 font-bold text-xs sm:text-sm uppercase tracking-widest shadow-[0_8px_32px_rgba(176,36,255,0.28)] transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-                    Confirmar reunión
-                </button>
-            </div>
+        <footer class="agenda__pie">
+            <button type="button" id="cita-btn-cancelar" class="accion accion--segunda">Cancelar</button>
+            <button type="button" id="cita-btn-confirmar" class="accion accion--principal" disabled>Confirmar reunión</button>
         </footer>
     </div>
 
-    <!-- ═══ Modal: Ajustes de Precios ═══ -->
-    <div id="modal-ajustes" class="modal-overlay" role="dialog" aria-labelledby="modal-ajustes-titulo" aria-hidden="true">
-        <div class="modal-content modal-ajustes-size">
-            <div class="modal-header">
-                <h2 id="modal-ajustes-titulo" class="text-lg font-bold flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary-dim">tune</span>
-                    Ajustes de precios
-                </h2>
-                <button type="button" class="modal-close" id="modal-ajustes-cerrar" aria-label="Cerrar">
-                    <span class="material-symbols-outlined">close</span>
+    <!-- ══ Ajustes de precios (equipo DAK) ══ -->
+    <div id="modal-ajustes" class="velo" role="dialog" aria-labelledby="modal-ajustes-titulo" aria-hidden="true" hidden>
+        <div class="ventana">
+            <div class="ventana__cabecera">
+                <h2 id="modal-ajustes-titulo" class="hoja__titulo">Ajustes de precios</h2>
+                <button type="button" class="boton-icono" id="modal-ajustes-cerrar" aria-label="Cerrar">
+                    <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
                 </button>
             </div>
-            <div class="modal-body modal-body-scroll">
-                <section class="mb-6">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-3">Servicios por nivel de dificultad</h3>
-                    <div id="ajustes-servicios-base" class="space-y-3"></div>
-                </section>
-                <section class="mb-6">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-3">Servicios con precio fijo</h3>
-                    <div id="ajustes-precios-fijos" class="space-y-2"></div>
-                </section>
-                <section class="mb-6">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-3">Perfiles de cliente (multiplicador)</h3>
-                    <div id="ajustes-perfiles" class="space-y-2"></div>
-                </section>
-                <section>
-                    <h3 class="text-xs font-black uppercase tracking-widest text-on-surface-variant mb-3">Factores extra (precio fijo)</h3>
-                    <div id="ajustes-factores-extra" class="space-y-2"></div>
-                </section>
+            <div class="ventana__cuerpo">
+                <section><h3 class="bloque__rotulo">Servicios con nivel</h3><div id="ajustes-servicios-base"></div></section>
+                <section><h3 class="bloque__rotulo">Servicios de precio fijo</h3><div id="ajustes-precios-fijos"></div></section>
+                <section><h3 class="bloque__rotulo">Perfiles de cliente</h3><div id="ajustes-perfiles"></div></section>
+                <section><h3 class="bloque__rotulo">Recargos de producción</h3><div id="ajustes-factores-extra"></div></section>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-modal-secondary" id="modal-ajustes-reset">Restaurar defaults</button>
-                <button type="button" class="btn-modal-danger" id="btn-logout-modal">
-                    <span class="material-symbols-outlined text-sm">logout</span>
-                    Cerrar sesión
-                </button>
-                <button type="button" class="btn-modal-primary" id="modal-ajustes-aplicar">Aplicar</button>
+            <div class="ventana__pie">
+                <button type="button" class="accion accion--segunda" id="modal-ajustes-reset">Restaurar</button>
+                <button type="button" class="accion accion--segunda" id="btn-logout-modal">Cerrar sesión</button>
+                <button type="button" class="accion accion--principal" id="modal-ajustes-aplicar">Aplicar</button>
             </div>
         </div>
     </div>
 
-    <!-- ═══ Modal: Admin Login ═══ -->
-    <div id="modal-login-admin" class="modal-overlay" role="dialog" aria-labelledby="modal-login-titulo" aria-hidden="true">
-        <div class="modal-content" style="max-width:400px">
-            <div class="modal-header">
-                <h2 id="modal-login-titulo" class="text-lg font-bold flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary-dim">shield_person</span>
-                    Acceso Administrador
-                </h2>
-                <button type="button" class="modal-close" id="modal-login-cerrar" aria-label="Cerrar">
-                    <span class="material-symbols-outlined">close</span>
+    <!-- ══ Acceso del equipo ══ -->
+    <div id="modal-login-admin" class="velo" role="dialog" aria-labelledby="modal-login-titulo" aria-hidden="true" hidden>
+        <div class="ventana ventana--angosta">
+            <div class="ventana__cabecera">
+                <h2 id="modal-login-titulo" class="hoja__titulo">Acceso del equipo</h2>
+                <button type="button" class="boton-icono" id="modal-login-cerrar" aria-label="Cerrar">
+                    <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
                 </button>
             </div>
-            <div class="modal-body space-y-3">
-                <input type="text" id="admin-user" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2.5 text-sm text-white placeholder-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="👤 Usuario">
-                <input type="password" id="admin-pass" class="w-full bg-surface-container-highest border border-outline-variant/15 rounded-lg px-3 py-2.5 text-sm text-white placeholder-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary-dim" placeholder="🔒 Contraseña">
-                <p id="admin-login-error" class="text-error text-xs mt-1" style="display:none">Credenciales incorrectas.</p>
+            <div class="ventana__cuerpo">
+                <label class="campo__rotulo" for="admin-user">Usuario</label>
+                <input type="text" id="admin-user" class="campo-texto" autocomplete="username">
+                <label class="campo__rotulo" for="admin-pass">Contraseña</label>
+                <input type="password" id="admin-pass" class="campo-texto" autocomplete="current-password">
+                <p class="nota nota--error" id="admin-login-error" hidden>Usuario o contraseña incorrectos.</p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-modal-primary w-full" id="btn-admin-submit">Ingresar</button>
+            <div class="ventana__pie">
+                <button type="button" class="accion accion--principal" id="btn-admin-submit" style="width:100%">Entrar</button>
             </div>
         </div>
     </div>
 
-    <!-- ═══ Floating Agendar FAB ═══ -->
-    <a href="agendar.html" id="fab-agendar" class="fab-agendar lg:hidden" title="Agendar reunión gratuita" aria-label="Agendar reunión">
-        <span class="material-symbols-outlined text-2xl">calendar_today</span>
-    </a>
-
-    <!-- ═══ Scripts ═══ -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" crossorigin="anonymous"></script>
-    <script src="config/credentials.js?v=5"></script>
-    <script src="js/data.js?v=5"></script>
-    <script src="js/calculator.js?v=7"></script>
+    <script src="js/config.public.js?v=1"></script>
+    <script src="js/comun.js?v=9"></script>
+    <script src="js/data.js?v=9"></script>
+    <script src="js/calendario.js?v=9"></script>
+    <script src="js/calculator.js?v=9"></script>
 </body>
 
 </html>

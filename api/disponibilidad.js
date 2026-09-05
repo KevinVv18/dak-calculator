@@ -31,11 +31,20 @@ const ALLOWED_ORIGINS = [
     'https://calculadora.dakagency.net',
     'https://plan.dakagency.net',
     'http://localhost:3000',
+    'http://localhost:3456',   // el puerto de .claude/launch.json
     'http://127.0.0.1:5500',
 ];
 
 module.exports = async function handler(req, res) {
     // ── CORS ──
+    // Vary: Origin es obligatorio aqui. La cabecera de abajo depende del origen de
+    // quien pregunta, y esta respuesta se cachea publicamente 300s. Sin Vary, la
+    // primera variante que entra en la cache se le sirve a todo el mundo: si la
+    // genero un rastreador o un monitor, que no mandan Origin, esa copia no lleva
+    // Access-Control-Allow-Origin y el navegador bloquea la peticion durante cinco
+    // minutos. Comprobado en produccion el 2026-09-04: con cache MISS llegaba la
+    // cabecera, con HIT no.
+    res.setHeader('Vary', 'Origin');
     const origin = req.headers.origin || '';
     if (ALLOWED_ORIGINS.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);

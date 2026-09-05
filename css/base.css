@@ -1,0 +1,165 @@
+/* ============================================================================
+   base.css — reset, fuentes y las superficies que pinta el navegador
+
+   El último bloque es el que suele quedarse sin diseñar: la selección, el
+   cursor de texto, la barra de scroll y el anillo de foco vienen con valores
+   por defecto que no pertenecen a ningún sistema. Aquí se visten.
+   ========================================================================== */
+
+@layer base {
+
+  /* ── Poppins autoalojada ──
+     Antes venía de Google Fonts y en dakagency.net ni siquiera se cargaba: el
+     sitio declaraba --font-display: 'Poppins' y caía al stack del sistema.
+     Solo el subconjunto latin: el español entra entero en U+0000-00FF. */
+  @font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../assets/fuentes/poppins-400.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                   U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+                   U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../assets/fuentes/poppins-600.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                   U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+                   U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../assets/fuentes/poppins-700.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+                   U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193,
+                   U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--letra);
+    font-size: var(--t-base);
+    font-weight: var(--peso-normal);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--grano-mesa);
+    /* Nada de overlay: sobre un fondo casi negro, overlay preserva los oscuros y el
+       grano desaparece. Se suma en claro, que es como se comporta la luz sobre la
+       fibra de verdad. */
+    /* En papel el grano OSCURECE la fibra, no la ilumina: multiply, no screen. */
+    opacity: .5;
+    mix-blend-mode: multiply;
+  }
+
+  h1, h2, h3, h4 {
+    margin: 0;
+    font-weight: var(--peso-fuerte);
+    letter-spacing: var(--track-display);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  p { margin: 0; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+
+  button, input, textarea, select {
+    font: inherit;
+    color: inherit;
+    margin: 0;
+  }
+  button { background: none; border: 0; cursor: pointer; }
+
+  img, svg { display: block; max-width: 100%; }
+
+  /* Los iconos son SVG dibujados, un solo grosor de trazo en todo el sitio */
+  .icono {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .icono--sm { width: 15px; height: 15px; }
+  .icono--lg { width: 22px; height: 22px; }
+
+  /* ── Superficies del navegador ── */
+
+  /* Sobre papel, subrayar con blanco encima deja el texto ilegible: la seleccion
+     es un marcador de color claro y la tinta se queda como esta. */
+  ::selection {
+    background: rgba(122, 0, 194, .18);
+    color: var(--tinta);
+  }
+
+  :root { caret-color: var(--morado-tinta); }
+
+  :where(a, button, input, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--morado-tinta);
+    outline-offset: 2px;
+    border-radius: var(--r-min);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--filete-medio) transparent;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--filete-medio);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--morado); }
+
+  /* Quitar las flechas de los number: el stepper ya cumple esa función */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilidades {
+  .sr-solo {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  [hidden] { display: none !important; }
+}
