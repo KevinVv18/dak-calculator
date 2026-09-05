@@ -348,21 +348,31 @@ padre. La fila inactiva reserva ese 1px transparente para que no salte el layout
 
 ### Buttons
 - **Forma:** radio de 4px, alto mínimo 44px, peso 700, icono y texto centrados.
-- **Principal** (`.accion--principal`): fondo morado, texto blanco, sombra de color
-  con desplazamiento. En hover pasa a morado claro y el texto se invierte a
-  `#1A0033` para conservar contraste. Es «Agendar la reunión».
+- **Principal** (`.accion--principal`): fondo morado, texto blanco, **sombra de
+  contacto en tinta**, nunca de color. Llevaba un halo morado al 90%: era el último
+  resto de la «iluminación» que se quitó del fondo, y estaba justo sobre el elemento
+  más importante de la página. En hover pasa a morado claro y **el texto sigue
+  blanco**: el `#1A0033` que había antes daba 3.51 sobre ese morado y no pasa AA;
+  blanco da 5.07. Es «Agendar la reunión».
 - **Segunda** (`.accion--segunda`): sin fondo, filete medio de 1px, tinta
   secundaria. En hover el borde se vuelve morado y la tinta sube.
 - **Estado activo:** `translateY(1px)`. Es el único desplazamiento de pulsación.
 - **Deshabilitado:** opacidad .4 y cursor `not-allowed`. No se cambia el color.
 - **Botón de icono:** cuadrado de 44px, radio 4px, tinta al suelo; en hover sube la
-  tinta y aparece un fondo blanco al 6%.
+  tinta y aparece `--roce-fuerte`. **En un mundo de papel el hover ensucia, no
+  ilumina:** el velo casi blanco al 6% que venía del fondo oscuro era invisible sobre
+  la hoja, y con él seis controles se quedaron sin estado de hover —incluida la fila
+  del catálogo, que es la que más se recorre.
 
 ### Chips
 - **Etiqueta `/MES`:** teal sobre transparente con filete teal al 45%, radio 2px,
   11px en mayúsculas. Marca recurrencia, nunca otra cosa.
-- **Sello:** rotado −4°, **borde y nunca fondo**, radio 2px. `REFERENCIAL` en
-  morado tinta; `OFICIAL` en verde logro, solo en modo admin.
+- **Sello:** rotado −6°, **borde y nunca fondo**, radio 2px, con `filter: url(#tinta)`
+  —un `feTurbulence` + `feDisplacementMap` que le muerde el borde, como el tampón
+  cuando pisa el papel. `REFERENCIAL` en morado tinta; `OFICIAL` en verde logro, en
+  modo admin; `CONFIRMADA` en verde al cerrar una reunión. **El filtro tiene que
+  existir en cada página que use la clase**: un `filter: url()` sin destino no pinta
+  el elemento sin filtro, no lo pinta en absoluto.
 
 ### Cards / Containers
 No hay tarjetas. Hay **la hoja** y hay **ventanas**.
@@ -370,9 +380,12 @@ No hay tarjetas. Hay **la hoja** y hay **ventanas**.
   columna flex con encabezado, cuerpo con scroll, totales fijos y pie.
 - **Ventanas modales:** mismo material, ancho `min(640px, 100%)` —o 400px en la
   variante angosta—, `max-height: min(84vh, 760px)`, cabecera y pie con filete y
-  fondo hundido, velo negro al 80% con desenfoque de 4px.
-- **Panel de agenda:** fondo `hoja`, filete, radio 6px, **sin sombra**. Vive dentro
-  de una superficie a pantalla completa y no flota sobre nada.
+  fondo hundido, velo de **tinta al 55%** con desenfoque de 3px. Es la mesa la que se
+  apaga detrás de la ventana, no un negro puro que no pertenece a este mundo.
+- **Panel de agenda:** la misma receta que la hoja y el tarifario —trama propia en
+  `multiply` y sombra de contacto—, porque es papel igual que ellos. Estuvo un tiempo
+  sin trama y sin sombra, y era exactamente ahí donde se veía la costura entre la
+  agenda y el resto.
 
 **Los totales viven fuera de sus bloques, y es deliberado.** El contrato de
 dirección decía «dos bloques cerrados con su total», y la construcción se apartó de
@@ -422,6 +435,50 @@ convertirse en una.
 Cada línea que entra en la hoja: rejilla `1fr | auto | auto`, 12px, importe a la
 derecha, botón de quitar de 26px en tinta tenue que se vuelve alarma en hover. Es
 lo que se escribe en el documento cuando el prospecto elige.
+
+### La agenda (tercera superficie del mismo escritorio)
+`agendar.html` y el overlay de la calculadora **comparten markup, CSS y módulo de
+calendario, byte por byte**. Existen las dos porque el enlace a la agenda está en la
+web principal, en el chat widget y en el pie del blog, así que hay prospectos que
+llegan sin pasar nunca por la calculadora. Si divergen, la costura se ve.
+
+Es **la solicitud de reunión**: el tercer documento del escritorio, no una capa de
+otro sistema encima.
+
+- **Membrete propio**, con la misma estructura que la cotización: emisor en
+  versalitas, tipo de documento, y `<dl>` de pares tabulados —Duración, Modalidad,
+  Horario, Coste—. Antes eran cuatro datos pegados en una línea con una clase
+  (`hoja__folio`) que **no existía en el CSS**, así que se pintaba como párrafo
+  suelto de 14px debajo de un titular de 30px.
+- **Tres pasos numerados**: `1 Elegí el día` · `2 Elegí la hora` · `3 Tus datos`.
+  Un impreso numera sus campos. La viñeta es un círculo de 20px con filete morado y
+  la cifra a 11px —el suelo de texto no admite excepciones ni para una viñeta.
+- **El orden de los pasos es el orden del DOM**, y eso arregla un defecto real: con
+  «Tus datos» dentro del panel del calendario, en móvil los paneles se apilan y las
+  horas quedaban **debajo de dos campos de texto**, fuera de pantalla. Elegías día y
+  no pasaba nada visible. El paso 3 es ahora su propia sección y cruza las dos
+  columnas por abajo.
+- **El calendario es una tabla de talonario**, no un mosaico de fichas: celdas
+  pegadas, separadas por filetes de 1px, sin radio, dentro de una caja con filete y
+  radio 6px que las recorta. La fila de días monta su filete sobre el del contenedor
+  (`margin-bottom: -1px`) para no doblarlo. **Las celdas de relleno del final se
+  dibujan**: sin ellas el rectángulo quedaba abierto por abajo a la derecha, y un
+  calendario impreso no termina a medias.
+- **Un día cerrado se trama** (`hoja-honda` y tinta tenue) y uno libre se queda en
+  blanco. Se lee de un golpe sin interpretar ningún color, que es como se lee un
+  calendario en papel. El elegido es la única celda de morado sólido.
+- **La columna de horas reserva su altura** (`min-height: 168px`). Con una sola línea
+  de aviso se quedaba en 60px al lado de un panel de 400 y parecía que faltaba algo.
+- **Al confirmar, la hoja pasa a constancia**: membrete `DAK Agency · Constancia`,
+  los mismos renglones de la cotización, y el sello `CONFIRMADA` en verde. No es una
+  pantalla de éxito con un tic; es el comprobante del documento que se acaba de
+  firmar.
+
+**Los rótulos de estado van en caja de frase.** El JS pasaba el botón a
+`CONFIRMAR REUNIÓN`, `AGENDANDO...` y `LISTO` en cuanto cambiaba de estado, mientras
+el HTML decía «Confirmar reunión»: la primera interacción lo ponía a gritar. Las
+mayúsculas de este sistema son de rótulo —versalitas espaciadas a 11px—, nunca de
+frase.
 
 ## Do's and Don'ts
 

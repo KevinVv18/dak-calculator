@@ -37,6 +37,11 @@
     --hoja-honda:   #F4F1F8;   /* campos y celdas hundidas */
     --hoja-alta:    #F3EBFC;   /* filas activas y bloque de totales */
 
+    /* Roce del puntero. En el mundo oscuro era un velo casi blanco al 5%; sobre
+       papel blanco eso no existe. En claro el hover ENSUCIA levemente, no ilumina. */
+    --roce:         rgba(20, 16, 28, .045);
+    --roce-fuerte:  rgba(20, 16, 28, .07);
+
     /* ── Filetes ── la estructura. En papel se ven mejor que nunca. */
     --filete:       rgba(20, 16, 28, .14);
     --filete-medio: rgba(20, 16, 28, .26);

@@ -16,7 +16,10 @@ function sanitizeHTML(str) {
 
 function validarEmail(email) {
     if (!email || email.length > 254) return false;
-    return /^[^s@]+@[^s@]+.[^s@]{2,}$/.test(email);
+    // Los tres [^\s@] llevan barra invertida a proposito. Sin ella la clase pasa a
+    // excluir la LETRA "s", y entonces jose@, luis@ o ventas@ dejan de ser emails
+    // validos: el prospecto ve "formato no valido" sobre una direccion correcta.
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
 // Anti-spam del lado del cliente: no es seguridad, es cortesía con el buzón.

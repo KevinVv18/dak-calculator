@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendar una reunión con DAK Agency</title>
     <meta name="description" content="Elegí un horario y conversemos 60 minutos por Google Meet, sin coste.">
-    <meta name="theme-color" content="#030106">
+    <meta name="theme-color" content="#E4E0EB">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="preload" href="assets/fuentes/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/tokens.css?v=8">
-    <link rel="stylesheet" href="css/base.css?v=8">
-    <link rel="stylesheet" href="css/cotizacion.css?v=8">
+    <link rel="stylesheet" href="css/tokens.css?v=9">
+    <link rel="stylesheet" href="css/base.css?v=9">
+    <link rel="stylesheet" href="css/cotizacion.css?v=9">
 </head>
 
 <body>
@@ -27,6 +27,14 @@
          son un sistema de iconos. -->
     <svg width="0" height="0" aria-hidden="true" style="position:absolute">
       <defs>
+        <!-- Mordida de tinta: desplaza el trazo lo justo para que el borde del
+             sello no sea perfecto, como cuando el tampon pisa el papel. Vive
+             tambien aqui porque un filter: url(#tinta) sin destino hace que el
+             elemento no se pinte en absoluto, no que se pinte sin filtro. -->
+        <filter id="tinta" x="-15%" y="-15%" width="130%" height="130%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="ruido"/>
+          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
         <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5 9 17.5 20 6.5"/></symbol>
         <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6 18 18M18 6 6 18"/></symbol>
         <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
@@ -59,11 +67,9 @@
         <header class="cabecera">
             <div class="cabecera__fila">
                 <div class="cabecera__marca">
-                    <svg class="icono icono--lg" aria-hidden="true" style="color:var(--morado-tinta)"><use href="#i-calendario"></use></svg>
-                    <div>
-                        <h2 id="cita-titulo" class="hoja__titulo">Agendar reunión</h2>
-                        <p class="hoja__folio">60 min · Google Meet · sin coste · Lambayeque (GMT-5)</p>
-                    </div>
+                    <img class="cabecera__logo" src="assets/logo.svg" alt="DAK Agency">
+                    <span class="cabecera__sep" aria-hidden="true"></span>
+                    <span class="cabecera__titulo">Agenda</span>
                 </div>
                 <button type="button" id="cita-cerrar-btn" class="boton-icono" aria-label="Cerrar">
                     <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
@@ -72,16 +78,33 @@
         </header>
 
         <main class="agenda__cuerpo">
+            <!-- Membrete, igual que la hoja de cotizacion. Antes aqui habia un titulo
+                 y una linea con cuatro datos pegados y con una clase que no existia en
+                 el CSS, asi que se pintaba como parrafo suelto. Un documento presenta
+                 sus datos en pares tabulados. -->
+            <div class="agenda__membrete">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
+                <h2 id="cita-titulo" class="hoja__titulo">Reunión de diagnóstico</h2>
+                <dl class="membrete">
+                    <div class="membrete__par"><dt>Duración</dt><dd>60 minutos</dd></div>
+                    <div class="membrete__par"><dt>Modalidad</dt><dd>Google Meet</dd></div>
+                    <div class="membrete__par"><dt>Horario</dt><dd>Lambayeque (GMT-5)</dd></div>
+                    <div class="membrete__par"><dt>Coste</dt><dd>Sin coste</dd></div>
+                </dl>
+            </div>
+
             <p id="cita-loading" class="hoja__vacia">Cargando disponibilidad…</p>
 
             <div id="cita-error" class="hoja__vacia" hidden>
                 <p class="nota nota--error" id="cita-error-msg">No se pudo cargar la disponibilidad.</p>
-                <button type="button" id="cita-retry-btn" class="accion accion--segunda" style="margin:var(--e4) auto 0">Reintentar</button>
+                <button type="button" id="cita-retry-btn" class="accion accion--segunda agenda__reintentar">Reintentar</button>
             </div>
 
             <section id="cita-left-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">1</span><span>Elegí el día</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+
                 <div class="agenda__mes">
-                    <h3 class="hoja__titulo" id="cita-month-title">—</h3>
+                    <p class="agenda__mes-nombre" id="cita-month-title">—</p>
                     <div class="agenda__nav">
                         <button type="button" id="cita-prev-month" class="boton-icono" aria-label="Mes anterior">
                             <svg class="icono" aria-hidden="true"><use href="#i-izq"></use></svg>
@@ -91,22 +114,22 @@
                         </button>
                     </div>
                 </div>
-                <div class="agenda__dias-rotulo" aria-hidden="true">
-                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
-                </div>
-                <div class="agenda__rejilla" id="cita-cal-grid"></div>
 
-                <div class="agenda__datos">
-                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
-                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
-                    <label class="campo__rotulo" for="cita-email">Tu email</label>
-                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
+                <!-- Tabla reglada, como el calendario de un talonario: las celdas
+                     sombreadas son los dias cerrados y las blancas los que quedan
+                     libres. Es la lectura de un impreso, no un mosaico de botones. -->
+                <div class="agenda__tabla">
+                    <div class="agenda__dias-rotulo" aria-hidden="true">
+                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                    </div>
+                    <div class="agenda__rejilla" id="cita-cal-grid"></div>
                 </div>
+
             </section>
 
             <section id="cita-right-col" class="agenda__panel" hidden>
-                <h3 class="hoja__titulo">Horarios libres</h3>
-                <div id="cita-slots-container" class="agenda__horas">
+                <h3 class="agenda__rotulo"><span class="agenda__paso">2</span><span>Elegí la hora</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div id="cita-slots-container" class="agenda__horas-caja">
                     <p class="nota">Elegí un día en el calendario.</p>
                 </div>
                 <div id="cita-summary-card" class="aviso" hidden>
@@ -115,7 +138,17 @@
                 </div>
             </section>
 
-            <div id="cita-confirmacion" class="agenda__panel" hidden>
+            <section id="cita-datos-col" class="agenda__panel agenda__panel--ancho" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">3</span><span>Tus datos</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div class="agenda__datos">
+                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
+                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
+                    <label class="campo__rotulo" for="cita-email">Tu email</label>
+                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
+                </div>
+            </section>
+
+            <div id="cita-confirmacion" class="agenda__panel agenda__panel--constancia" hidden>
                 <div id="cita-resumen"></div>
             </div>
         </main>
@@ -126,9 +159,9 @@
         </footer>
     </div>
 
-    <script src="js/comun.js?v=8"></script>
-    <script src="js/calendario.js?v=8"></script>
-    <script src="js/agendar.js?v=8"></script>
+    <script src="js/comun.js?v=9"></script>
+    <script src="js/calendario.js?v=9"></script>
+    <script src="js/agendar.js?v=9"></script>
 </body>
 
 </html>

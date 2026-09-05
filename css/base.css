@@ -110,9 +110,11 @@ body::before {
 
   /* ── Superficies del navegador ── */
 
+  /* Sobre papel, subrayar con blanco encima deja el texto ilegible: la seleccion
+     es un marcador de color claro y la tinta se queda como esta. */
   ::selection {
-    background: rgba(122, 0, 194, .22);
-    color: #fff;
+    background: rgba(122, 0, 194, .18);
+    color: var(--tinta);
   }
 
   :root { caret-color: var(--morado-tinta); }

@@ -16,6 +16,15 @@ let citaCurrentMonthIdx = 0;
 let citaSelectedDateStr = null; // "YYYY-MM-DD"
 let citaSelectedSlot = null;    // { start, end, hour }
 
+// Los tres pasos del formulario. Se muestran y se ocultan siempre juntos.
+const CITA_PANELES = ['cita-left-col', 'cita-right-col', 'cita-datos-col'];
+function mostrarPaneles(visible) {
+    CITA_PANELES.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !visible;
+    });
+}
+
 function formatHour12(h24) {
     const hour = parseInt(h24);
     const suffix = hour >= 12 ? 'PM' : 'AM';
@@ -51,15 +60,14 @@ function abrirModalCita() {
 
     // Show loading, hide everything else
     document.getElementById('cita-loading').hidden = false;
-    document.getElementById('cita-left-col').hidden = true;
-    document.getElementById('cita-right-col').hidden = true;
+    mostrarPaneles(false);
     document.getElementById('cita-error').hidden = true;
     document.getElementById('cita-confirmacion').hidden = true;
     document.getElementById('cita-summary-card').hidden = true;
 
     const confirmBtn = document.getElementById('cita-btn-confirmar');
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'CONFIRMAR REUNIÓN';
+    confirmBtn.textContent = 'Confirmar reunión';
 
     const cancelBtn = document.getElementById('cita-btn-cancelar');
     cancelBtn.textContent = 'Cancelar';
@@ -109,8 +117,7 @@ async function cargarDisponibilidad() {
         citaCurrentMonthIdx = 0;
         buildCalendarGrid(citaMonths[0]);
 
-        document.getElementById('cita-left-col').hidden = false;
-        document.getElementById('cita-right-col').hidden = false;
+        mostrarPaneles(true);
         document.getElementById('cita-slots-container').innerHTML = '<p class="nota">Elegí un día en el calendario.</p>';
     } catch (err) {
         document.getElementById('cita-loading').hidden = true;
@@ -155,11 +162,17 @@ function buildCalendarGrid(yearMonth) {
         if (isSelected) cls += ' dia--activo';
 
         const disabled = (!isAvailable || isPast) ? 'disabled' : '';
-        const dot = (isAvailable && !isPast && !isSelected) ? '<div class="cal-dot"></div>' : '';
-
         html += `<button type="button" class="${cls}" data-date="${dateStr}" ${disabled}>
             <span>${d}</span>
         </button>`;
+    }
+
+    // Celdas de relleno al final: sin ellas la ultima semana deja el rectangulo
+    // de la tabla abierto por abajo a la derecha, y un calendario impreso no
+    // termina a medias.
+    const sobran = (startDow + totalDays) % 7;
+    if (sobran) {
+        for (let i = sobran; i < 7; i++) html += '<div class="dia dia--vacio"></div>';
     }
 
     grid.innerHTML = html;
@@ -262,19 +275,19 @@ async function confirmarCita() {
     const btn = document.getElementById('cita-btn-confirmar');
 
     if (isCooldown('cita')) {
-        btn.textContent = 'ESPERÁ...';
-        setTimeout(() => { btn.textContent = 'CONFIRMAR REUNIÓN'; }, 3000);
+        btn.textContent = 'Esperá un momento…';
+        setTimeout(() => { btn.textContent = 'Confirmar reunión'; }, 3000);
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'AGENDANDO...';
+    btn.textContent = 'Agendando…';
 
     const nombre = (document.getElementById('cita-nombre')?.value?.trim() || '').replace(/[<>"'`]/g, '').substring(0, 100);
     const email = (document.getElementById('cita-email')?.value?.trim() || '').substring(0, 254);
 
     if (!email || !validarEmail(email)) {
-        btn.textContent = 'CONFIRMAR REUNIÓN';
+        btn.textContent = 'Confirmar reunión';
         btn.disabled = false;
         // Highlight email field
         const emailField = document.getElementById('cita-email');
@@ -289,8 +302,13 @@ async function confirmarCita() {
     // Build services summary
     // Anotando cuáles son mensuales: quien atienda la reunión necesita saber si lo
     // que el prospecto marcó es una construcción o un compromiso que se repite.
+    // Las partidas libres solo existen dentro de la calculadora: agendar.html no
+    // carga calculator.js, y sin esta guarda confirmar lanzaba un ReferenceError
+    // fuera del try, dejando el boton clavado en «Agendando…».
     const servicios = resumenServicios();
-    itemsPersonalizados.forEach(i => servicios.push(i.nombre));
+    if (typeof itemsPersonalizados !== 'undefined') {
+        itemsPersonalizados.forEach(i => servicios.push(i.nombre));
+    }
 
     try {
         const res = await fetch(`${API_BASE}/api/agendar-cita`, {
@@ -308,24 +326,29 @@ async function confirmarCita() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al agendar');
 
+        avisarPanelDAK({ nombre, email, servicios, inicio: citaSelectedSlot.start });
+
         // Hide calendar columns, show confirmation
-        document.getElementById('cita-left-col').hidden = true;
-        document.getElementById('cita-right-col').hidden = true;
+        mostrarPaneles(false);
         document.getElementById('cita-error').hidden = true;
 
         const meetHtml = data.meetLink
-            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="accion accion--principal" style="margin-top:var(--e4)">🎥 Unirse a Google Meet</a>`
+            ? `<a href="${sanitizeHTML(data.meetLink)}" target="_blank" rel="noopener" class="accion accion--principal agenda__meet">${icono('i-video')}Unirse a Google Meet</a>`
             : '';
 
+        // La hoja deja de ser un formulario y pasa a ser el comprobante: mismo
+        // membrete que la cotizacion, los mismos renglones, y el sello encima.
         document.getElementById('cita-resumen').innerHTML = `
+            <p class="membrete__emisor">DAK Agency · Constancia</p>
             <h2 class="hoja__titulo">Reunión agendada</h2>
-            <p class="nota" style="margin:var(--e3) 0 var(--e5)">Te enviamos la invitación con el enlace.</p>
+            <p class="nota constancia__nota">Te enviamos la invitación con el enlace a tu correo.</p>
             <div class="anotacion"><span class="anotacion__nombre">Día</span>
                 <span class="anotacion__importe">${sanitizeHTML(formatDateLong(citaSelectedDateStr))}</span></div>
             <div class="anotacion"><span class="anotacion__nombre">Hora</span>
                 <span class="anotacion__importe">${formatHour12(citaSelectedSlot.hour)}</span></div>
             <div class="anotacion"><span class="anotacion__nombre">Email</span>
                 <span class="anotacion__importe">${sanitizeHTML(email)}</span></div>
+            <div class="constancia__sello"><span class="sello sello--oficial">Confirmada</span></div>
             ${meetHtml}
         `;
         document.getElementById('cita-confirmacion').hidden = false;
@@ -336,15 +359,37 @@ async function confirmarCita() {
             detail: { nombre, email, fecha: citaSelectedDateStr, hora: citaSelectedSlot.hour }
         }));
 
-        btn.textContent = 'LISTO';
+        btn.textContent = 'Listo';
         btn.disabled = true;
         document.getElementById('cita-btn-cancelar').textContent = 'Cerrar';
     } catch (err) {
         const errorDiv = document.getElementById('cita-error');
         document.getElementById('cita-error-msg').textContent = err.message;
         errorDiv.hidden = false;
-        btn.textContent = 'CONFIRMAR REUNIÓN';
+        btn.textContent = 'Confirmar reunión';
         btn.disabled = false;
     }
 }
 
+
+// ══════════════════════════════════════════
+//  Aviso al panel comercial de DAK
+//  Fire-and-forget a proposito: el lead es importante, pero jamas puede impedir
+//  que el prospecto vea su reunion confirmada. Si admin.dakagency.net esta caido
+//  o el CORS falla, aqui no se entera nadie salvo la consola.
+// ══════════════════════════════════════════
+function avisarPanelDAK({ nombre, email, servicios, inicio }) {
+    try {
+        fetch('https://admin.dakagency.net/api/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: nombre,
+                email,
+                service: servicios.join(', ') || 'Consulta general',
+                message: 'Agendo reunion: ' + (inicio || ''),
+                source: 'agendar-calculadora',
+            }),
+        }).catch(() => {});
+    } catch (_) { /* nunca rompe la confirmacion */ }
+}

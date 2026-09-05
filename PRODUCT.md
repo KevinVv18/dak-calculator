@@ -51,7 +51,9 @@ herramienta de precios es la prueba de cómo cobra la agencia.**
 
 ## Capabilities and Constraints
 
-- Sitio estático desplegado en **Vercel**, sin paso de build. Se sirve tal cual está en el repo.
+- Sitio estático sin paso de build, servido tal cual está en el repo. **La página está en
+  Hostinger** (`u567580447`, `domains/plan.dakagency.net/public_html/`); **solo `/api` está en
+  Vercel**. Son dos orígenes distintos y toda llamada a la API es cross-origin.
 - Catálogo de 34 servicios en 6 categorías. Dos formas de precio: con dos tiers (básico/avanzado) o
   precio fijo. Más 4 recargos de producción y un ítem libre.
 - **Cada servicio es de pago único o mensual.** Diez son mensuales: mantenimiento web, los tres de

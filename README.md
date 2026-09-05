@@ -3,8 +3,38 @@
 `plan.dakagency.net` — el prospecto arma su presupuesto y ve, por separado, **lo que se paga una
 vez** y **lo que se paga cada mes**.
 
-Sitio estático desplegado en Vercel. **No hay paso de build**: lo que está en el repo es lo que se
-sirve.
+Sitio estático. **No hay paso de build**: lo que está en el repo es lo que se sirve.
+
+## Dónde vive cada cosa
+
+Son dos alojamientos distintos, y confundirlos cuesta un despliegue:
+
+| Qué | Dónde |
+|---|---|
+| La página (`index.html`, `agendar.html`, `css/`, `js/`, `assets/`) | **Hostinger**, cuenta `u567580447`, en `domains/plan.dakagency.net/public_html/` |
+| Las funciones de `/api` (Google Calendar) | **Vercel**, en `dak-calculator.vercel.app` |
+
+`js/comun.js` apunta a Vercel con `API_BASE`, así que **toda llamada a la API es
+cross-origin** y depende de la lista blanca de `ALLOWED_ORIGINS` en `api/*.js`. Por eso
+esas respuestas llevan `Vary: Origin`: sin él, una respuesta cacheada para un origen se
+sirve a otro y «Agendar» deja de funcionar en ventanas de cinco minutos.
+
+El docroot de Hostinger **no es un checkout de git**: no hay `.git`, los archivos se
+suben. Dos consecuencias:
+
+- Se sirven en abierto `README.md`, `package.json`, `vercel.json` y `.gitignore`, que
+  están ahí solo porque se subió el repo entero.
+- La CSP de `vercel.json` **no se aplica a la página**. Hostinger responde únicamente
+  `content-security-policy: upgrade-insecure-requests`. Ese bloque de `vercel.json` rige
+  la API y documenta la intención; no protege el HTML.
+
+### Antes de subir nada, comprobar el servidor
+
+En julio de 2026 alguien editó `js/agendar.js` **a mano en producción** para mandar el
+lead al MySQL de `admin.dakagency.net`, y dejó un `agendar.js.bak-20260703` al lado. Esa
+edición nunca llegó al repo. Está portada a `js/calendario.js` (`avisarPanelDAK`), así que
+ahora la mandan las dos superficies, pero la lección se queda: **este servidor recibe
+parches a mano**. Comparar antes de sobrescribir.
 
 ## Por qué dos cifras y no una
 

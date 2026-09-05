@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora DAK — cuánto cuesta, una vez y cada mes</title>
     <meta name="description" content="Arma tu presupuesto con DAK Agency y mira por separado lo que se paga una vez y lo que se paga cada mes.">
-    <meta name="theme-color" content="#030106">
+    <meta name="theme-color" content="#E4E0EB">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <link rel="preload" href="assets/fuentes/poppins-400.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="css/tokens.css?v=8">
-    <link rel="stylesheet" href="css/base.css?v=8">
-    <link rel="stylesheet" href="css/cotizacion.css?v=8">
+    <link rel="stylesheet" href="css/tokens.css?v=9">
+    <link rel="stylesheet" href="css/base.css?v=9">
+    <link rel="stylesheet" href="css/cotizacion.css?v=9">
 </head>
 
 <body>
@@ -19,14 +19,20 @@
   THESIS: Esta superficie es la cotización escribiéndose delante del prospecto, no
   una página de precios. Rechaza la rejilla de tarjetas de plan con toggle
   mensual/anual que envía toda la categoría.
-  OWN-WORLD: Documento de cotización peruano sobre fondo #030106. Estructura por
+  OWN-WORLD: Papel sobre escritorio. Mesa #E4E0EB con fibra de feTurbulence en
+  multiply, hojas #FFFFFF con su propia trama y sombra de contacto. Estructura por
   filetes de 1px, esquinas casi rectas, Poppins autoalojada, importes siempre a la
-  derecha. Morado #B93EFF para el sello; teal #00C8C8 solo como unidad /mes.
+  derecha. Morado #7A00C2 en superficies y #6D00AF en texto; teal #00625F solo como
+  unidad /mes. La versión sobre #030106 se descartó: el fondo oscuro con lavado
+  morado venía de la marca, no del mundo, y era lo que lo hacía indistinguible.
   STORY: El dueño de un negocio en Chiclayo entiende en segundos que hay dos cifras
   distintas —una vez y cada mes—, y agenda una reunión.
-  FIRST VIEWPORT: Izquierda, el catálogo como índice de partidas regladas. Derecha,
-  la hoja con folio y validez, dos bloques cerrados con su total, el sello
-  REFERENCIAL en borde, y agendar como acción principal.
+  FIRST VIEWPORT: Izquierda, el tarifario como índice de partidas regladas. Derecha,
+  la hoja con membrete, referencia y fecha, dos bloques cerrados con su total, el
+  sello REFERENCIAL en borde, y agendar como acción principal.
+  MISMO MUNDO EN LA AGENDA: agendar.html y el overlay comparten markup y CSS. Son la
+  solicitud de reunión —membrete propio, calendario como tabla reglada de talonario,
+  constancia sellada al confirmar—, no una capa de otro sistema encima.
   FORM: «La cotización», candidata 4 de la lista ordenada por resonancia. Semilla
   fe129161, índice asignado 4.
   FINISH: unreviewed and undocumented is unfinished; this build ends with the finish
@@ -238,11 +244,9 @@
         <header class="cabecera">
             <div class="cabecera__fila">
                 <div class="cabecera__marca">
-                    <svg class="icono icono--lg" aria-hidden="true" style="color:var(--morado-tinta)"><use href="#i-calendario"></use></svg>
-                    <div>
-                        <h2 id="cita-titulo" class="hoja__titulo">Agendar reunión</h2>
-                        <p class="hoja__folio">60 min · Google Meet · sin coste · Lambayeque (GMT-5)</p>
-                    </div>
+                    <img class="cabecera__logo" src="assets/logo.svg" alt="DAK Agency">
+                    <span class="cabecera__sep" aria-hidden="true"></span>
+                    <span class="cabecera__titulo">Agenda</span>
                 </div>
                 <button type="button" id="cita-cerrar-btn" class="boton-icono" aria-label="Cerrar">
                     <svg class="icono" aria-hidden="true"><use href="#i-cerrar"></use></svg>
@@ -251,16 +255,33 @@
         </header>
 
         <main class="agenda__cuerpo">
+            <!-- Membrete, igual que la hoja de cotizacion. Antes aqui habia un titulo
+                 y una linea con cuatro datos pegados y con una clase que no existia en
+                 el CSS, asi que se pintaba como parrafo suelto. Un documento presenta
+                 sus datos en pares tabulados. -->
+            <div class="agenda__membrete">
+                <p class="membrete__emisor">DAK Agency · Chiclayo, Perú</p>
+                <h2 id="cita-titulo" class="hoja__titulo">Reunión de diagnóstico</h2>
+                <dl class="membrete">
+                    <div class="membrete__par"><dt>Duración</dt><dd>60 minutos</dd></div>
+                    <div class="membrete__par"><dt>Modalidad</dt><dd>Google Meet</dd></div>
+                    <div class="membrete__par"><dt>Horario</dt><dd>Lambayeque (GMT-5)</dd></div>
+                    <div class="membrete__par"><dt>Coste</dt><dd>Sin coste</dd></div>
+                </dl>
+            </div>
+
             <p id="cita-loading" class="hoja__vacia">Cargando disponibilidad…</p>
 
             <div id="cita-error" class="hoja__vacia" hidden>
                 <p class="nota nota--error" id="cita-error-msg">No se pudo cargar la disponibilidad.</p>
-                <button type="button" id="cita-retry-btn" class="accion accion--segunda" style="margin:var(--e4) auto 0">Reintentar</button>
+                <button type="button" id="cita-retry-btn" class="accion accion--segunda agenda__reintentar">Reintentar</button>
             </div>
 
             <section id="cita-left-col" class="agenda__panel" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">1</span><span>Elegí el día</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+
                 <div class="agenda__mes">
-                    <h3 class="hoja__titulo" id="cita-month-title">—</h3>
+                    <p class="agenda__mes-nombre" id="cita-month-title">—</p>
                     <div class="agenda__nav">
                         <button type="button" id="cita-prev-month" class="boton-icono" aria-label="Mes anterior">
                             <svg class="icono" aria-hidden="true"><use href="#i-izq"></use></svg>
@@ -270,22 +291,22 @@
                         </button>
                     </div>
                 </div>
-                <div class="agenda__dias-rotulo" aria-hidden="true">
-                    <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
-                </div>
-                <div class="agenda__rejilla" id="cita-cal-grid"></div>
 
-                <div class="agenda__datos">
-                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
-                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
-                    <label class="campo__rotulo" for="cita-email">Tu email</label>
-                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
+                <!-- Tabla reglada, como el calendario de un talonario: las celdas
+                     sombreadas son los dias cerrados y las blancas los que quedan
+                     libres. Es la lectura de un impreso, no un mosaico de botones. -->
+                <div class="agenda__tabla">
+                    <div class="agenda__dias-rotulo" aria-hidden="true">
+                        <span>Lu</span><span>Ma</span><span>Mi</span><span>Ju</span><span>Vi</span><span>Sá</span><span>Do</span>
+                    </div>
+                    <div class="agenda__rejilla" id="cita-cal-grid"></div>
                 </div>
+
             </section>
 
             <section id="cita-right-col" class="agenda__panel" hidden>
-                <h3 class="hoja__titulo">Horarios libres</h3>
-                <div id="cita-slots-container" class="agenda__horas">
+                <h3 class="agenda__rotulo"><span class="agenda__paso">2</span><span>Elegí la hora</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div id="cita-slots-container" class="agenda__horas-caja">
                     <p class="nota">Elegí un día en el calendario.</p>
                 </div>
                 <div id="cita-summary-card" class="aviso" hidden>
@@ -294,7 +315,17 @@
                 </div>
             </section>
 
-            <div id="cita-confirmacion" class="agenda__panel" hidden>
+            <section id="cita-datos-col" class="agenda__panel agenda__panel--ancho" hidden>
+                <h3 class="agenda__rotulo"><span class="agenda__paso">3</span><span>Tus datos</span><span class="agenda__filete" aria-hidden="true"></span></h3>
+                <div class="agenda__datos">
+                    <label class="campo__rotulo" for="cita-nombre">Tu nombre</label>
+                    <input id="cita-nombre" type="text" class="campo-texto" placeholder="Nombre y apellido" maxlength="100" autocomplete="name">
+                    <label class="campo__rotulo" for="cita-email">Tu email</label>
+                    <input id="cita-email" type="email" class="campo-texto" placeholder="tu@email.com" autocomplete="email">
+                </div>
+            </section>
+
+            <div id="cita-confirmacion" class="agenda__panel agenda__panel--constancia" hidden>
                 <div id="cita-resumen"></div>
             </div>
         </main>
@@ -352,10 +383,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" crossorigin="anonymous"></script>
     <script src="js/config.public.js?v=1"></script>
-    <script src="js/comun.js?v=8"></script>
-    <script src="js/data.js?v=8"></script>
-    <script src="js/calendario.js?v=8"></script>
-    <script src="js/calculator.js?v=8"></script>
+    <script src="js/comun.js?v=9"></script>
+    <script src="js/data.js?v=9"></script>
+    <script src="js/calendario.js?v=9"></script>
+    <script src="js/calculator.js?v=9"></script>
 </body>
 
 </html>
